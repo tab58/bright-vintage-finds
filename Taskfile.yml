@@ -1,0 +1,16 @@
+version: "3"
+
+tasks:
+  # Pulls up the local docker environment (can specify optionally a single container name)
+  # usage: task up -- <container-name>
+  up:
+    dir: environment/local-docker
+    cmds:
+      - dotenvx run -f .env.development -- docker compose up -d --build {{.CLI_ARGS}}
+
+  # Pulls down the local docker environment (can specify optionally a single container name)
+  # usage: task down -- <container-name>
+  down:
+    dir: environment/local-docker
+    cmds:
+      - docker compose down {{.CLI_ARGS}}

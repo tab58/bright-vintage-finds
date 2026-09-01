@@ -1,0 +1,67 @@
+version: "3"
+
+tasks:
+  # Runs the main-api service locally
+  run:
+    cmds:
+      - dotenvx run -f .env.development -- go run cmd/app/main.go
+
+  run-tests:
+    cmds:
+      - task run-unit-tests
+      - task run-integration-tests
+
+  # Runs the unit tests for the main-api service
+  run-unit-tests:
+    cmds:
+      - go test -coverprofile=coverage.out `go list ./... | egrep -v '(/mocks|/logger)$ '`
+      - go tool cover -func=coverage.out
+
+  # Runs the integration tests for the main-api service (requires Docker to be running).
+  # -p 1 runs packages sequentially, not concurrently: many packages' integration
+  # tests share one live Postgres instance and TRUNCATE overlapping tables
+  # (users/organizations/companies), so concurrent package runs can deadlock or
+  # hit spurious FK-violation races against each other.
+  run-integration-tests:
+    cmds:
+      - go test ./... -tags=integration -p 1 -coverprofile=coverage-integration.out
+      - go tool cover -func=coverage-integration.out
+
+  # Runs code generation for the main-api service (e.g. test mocks, etc.)
+  generate:
+    cmds:
+      - go generate ./...
+
+  # Run this task to generate a new migration (diffs against the Ent schema and what is in the migrations folder).
+  # Uses atlas.hcl (env "local"). Requires Docker (throwaway dev Postgres).
+  # GOWORK=off: Atlas's ent:// loader conflicts with a go.work workspace.
+  # usage: task generate-migration -- <name-of-migration>
+  generate-migration:
+    dir: db
+    env:
+      GOWORK: "off"
+    cmds:
+      - atlas migrate diff {{.CLI_ARGS}} --env local
+
+  # Run this task to apply all migrations in folder to the local database
+  # usage: task apply-migrations
+  apply-migrations:
+    dir: db
+    cmds:
+      - |
+        atlas migrate apply \
+        --url "postgres://postgres:postgres@localhost:5432/maindb?sslmode=disable" \
+        --dir "file://migrations" \
+        --revisions-schema "public" \
+        --allow-dirty
+
+  # Applies the schema to the local database WITHOUT using the migrations folder
+  # usage: task apply-schema-direct
+  apply-schema-direct:
+    dir: db
+    cmds:
+      - |
+        atlas schema apply \
+        --to "ent://schema" \
+        --url "postgres://postgres:postgres@localhost:5432/maindb?sslmode=disable" \
+        --dev-url "docker://postgres/17/dev"
