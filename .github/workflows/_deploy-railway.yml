@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       service:
-        description: "Service to deploy (main-api)"
+        description: "Service to deploy (main-api, public-site)"
         required: true
         type: string
       version:
@@ -20,6 +20,7 @@ on:
         type: choice
         options:
           - main-api
+          - public-site
       version:
         description: "Image tag to deploy (e.g. 1.2.3)"
         required: true
@@ -38,6 +39,8 @@ jobs:
         env:
           RAILWAY_MAIN_API_SERVICE_ID: ${{ vars.RAILWAY_MAIN_API_SERVICE_ID }}
           RAILWAY_MAIN_API_ENVIRONMENT_ID: ${{ vars.RAILWAY_MAIN_API_ENVIRONMENT_ID }}
+          RAILWAY_PUBLIC_SITE_SERVICE_ID: ${{ vars.RAILWAY_PUBLIC_SITE_SERVICE_ID }}
+          RAILWAY_PUBLIC_SITE_ENVIRONMENT_ID: ${{ vars.RAILWAY_PUBLIC_SITE_ENVIRONMENT_ID }}
         run: |
           set -euo pipefail
 
@@ -55,6 +58,14 @@ jobs:
               targets=$(jq -nc \
                 --arg sid "$RAILWAY_MAIN_API_SERVICE_ID" \
                 --arg eid "$RAILWAY_MAIN_API_ENVIRONMENT_ID" \
+                '[{service_id:$sid, environment_id:$eid}]')
+              ;;
+            public-site)
+              require RAILWAY_PUBLIC_SITE_SERVICE_ID
+              require RAILWAY_PUBLIC_SITE_ENVIRONMENT_ID
+              targets=$(jq -nc \
+                --arg sid "$RAILWAY_PUBLIC_SITE_SERVICE_ID" \
+                --arg eid "$RAILWAY_PUBLIC_SITE_ENVIRONMENT_ID" \
                 '[{service_id:$sid, environment_id:$eid}]')
               ;;
             *)

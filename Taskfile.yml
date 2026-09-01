@@ -8,6 +8,12 @@ tasks:
     cmds:
       - dotenvx run -f .env.development -- docker compose up -d --build {{.CLI_ARGS}}
 
+  # Runs the frontend dev server (Vite; prints the local URL on start)
+  front-up:
+    dir: frontend/public_site
+    cmds:
+      - npm run dev
+
   # Pulls down the local docker environment (can specify optionally a single container name)
   # usage: task down -- <container-name>
   down:

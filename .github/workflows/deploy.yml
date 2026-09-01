@@ -2,16 +2,32 @@ name: Deploy
 
 on:
   push:
-    paths:
-      - "backend/main-api/**"
     branches:
       - main
   workflow_dispatch:
 
 jobs:
-  # ponytail: single service — trigger paths replace the dorny/paths-filter
-  # detect-changes job; reinstate it when a second service appears.
+  detect-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      main-api: ${{ steps.filter.outputs.main-api }}
+      public-site: ${{ steps.filter.outputs.public-site }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            main-api:
+              - "backend/main-api/**"
+            public-site:
+              - "frontend/public_site/**"
+
   test-main-api:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.main-api == 'true'
     uses: ./.github/workflows/_go-unit-tests.yml
     with:
       service-path: backend/main-api
@@ -42,4 +58,32 @@ jobs:
     with:
       service: main-api
       version: ${{ needs.main-api.outputs.new_release_version }}
+    secrets: inherit
+
+  # public-site is a static site (no test suite); release + image build only.
+  # _go-release-docker.yml has no Go-specific steps despite the name.
+  public-site:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.public-site == 'true'
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      packages: write
+    uses: ./.github/workflows/_go-release-docker.yml
+    with:
+      service-path: frontend/public_site
+      image-name: public-site
+      tag-prefix: "public-site/v"
+      docker-context: frontend/public_site
+      dockerfile-path: frontend/public_site/public_site.Dockerfile
+    secrets: inherit
+
+  deploy-public-site:
+    needs: public-site
+    if: needs.public-site.outputs.new_release_published == 'true'
+    uses: ./.github/workflows/_deploy-railway.yml
+    with:
+      service: public-site
+      version: ${{ needs.public-site.outputs.new_release_version }}
     secrets: inherit

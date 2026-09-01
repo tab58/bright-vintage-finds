@@ -4,7 +4,7 @@ This repo documents itself through `AGENTS.md` files. They are the source of tru
 
 ## Project Overview
 
-bright-vintage-finds is an early-stage monorepo for a vintage-goods selling platform: a public-facing website combined with an inventory system for the site. The owner uploads pictures and details of items to sell, gains insight into their own sales, and may eventually get a sales portal. Currently one Go service exists: `backend/main-api`, an HTTP API built on the external `github.com/tab58/huma-http-server` framework (huma-based server with JWT auth and router plumbing). It boots a server, registers a `/healthz` route, loads config from env vars via Viper, and guards `/admin` routes by verifying Cloudflare Access assertions (`internal/cfaccess`; open in development, fail-closed in production when `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` are unset). `frontend/` is an empty placeholder for the web client to come. `environment/local-docker/` holds the local Docker environment (Postgres + Atlas migration runner + floci S3 + main-api), started with `task up` from the repo root.
+bright-vintage-finds is an early-stage monorepo for a vintage-goods selling platform: a public-facing website combined with an inventory system for the site. The owner uploads pictures and details of items to sell, gains insight into their own sales, and may eventually get a sales portal. Currently one Go service exists: `backend/main-api`, an HTTP API built on the external `github.com/tab58/huma-http-server` framework (huma-based server with JWT auth and router plumbing). It boots a server, registers a `/healthz` route, loads config from env vars via Viper, and guards `/admin` routes by verifying Cloudflare Access assertions (`internal/cfaccess`; open in development, fail-closed in production when `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` are unset). `frontend/` holds web clients, one folder per client; the only one so far is `frontend/public_site/`, a single static splash page (Vite + React + TypeScript + StyleX) with hardcoded content — no routing, no API calls. `environment/local-docker/` holds the local Docker environment (Postgres + Atlas migration runner + floci S3 + main-api), started with `task up` from the repo root.
 
 ## Reference Documentation
 
@@ -31,7 +31,14 @@ Do **not** read these eagerly. Read them on demand when the task calls for the i
 │       ├── internal/logger/     # slog-based JSON logger
 │       ├── Taskfile.yml         # run / test / generate / migration tasks
 │       └── main-api.Dockerfile  # Multi-stage build → scratch image (build context = repo root)
-├── frontend/                    # Empty placeholder (web client TBD)
+├── frontend/                    # Web clients, one folder per client
+│   └── public_site/             # Static splash page (Vite + React + TS + StyleX), served by Caddy in prod
+│       ├── src/App.tsx          # Splash page component (all content hardcoded)
+│       ├── src/assets/          # Images cropped from Whatnot profile screenshot
+│       ├── public/env.js        # Dev default for window.BACKEND_API (prod: Caddy injects it)
+│       ├── Caddyfile            # Serves dist/ on $PORT; /env.js exposes $BACKEND_API at runtime
+│       ├── public_site.Dockerfile # npm build → caddy:2-alpine (build context = this dir)
+│       └── vite.config.ts       # Vite + vite-plugin-stylex (src/index.css holds the @stylex marker)
 └── environment/
     ├── local-docker/            # Local Docker Compose: db-main-api (Postgres 17), db-main-api-migrate (Atlas), floci (S3), main-api
     └── shared/golang/           # Shared Go module (clients/aws_s3: S3 client + mocks), consumed by services via replace directive
@@ -41,8 +48,9 @@ Do **not** read these eagerly. Read them on demand when the task calls for the i
 
 ### Local environment (repo root)
 ```bash
-task up    # Start local Docker stack (dotenvx loads environment/local-docker/.env.development)
-task down  # Stop it
+task up        # Start local Docker stack (dotenvx loads environment/local-docker/.env.development)
+task down      # Stop it
+task front-up  # Run the frontend dev server (Vite; prints the local URL)
 ```
 
 ### main-api (backend/main-api/)
@@ -75,18 +83,20 @@ The HTTP framework (huma server, router, JWT auth middleware, `AuthInfoBuilder`)
 
 **Backend:** Go 1.25, huma v2 (via `tab58/huma-http-server`), Viper (config), slog (logging), JWT auth (golang-jwt via framework), Ent ORM + Atlas migrations (Postgres, pgx driver, KSUID ids), aws-sdk-go-v2 (S3 object storage). Planned per Taskfile/config: Redis/Asynq, AWS Secrets Manager, Firebase.
 
-**Frontend:** TBD (`frontend/` is empty).
+**Frontend:** Vite 5, React 18, TypeScript, StyleX (via `vite-plugin-stylex`). Commands (from `frontend/public_site/`): `npm run dev` / `npm run build` / `npm run preview`.
 
 ## CI/CD
 
-GitHub Actions (`.github/workflows/`), modeled on stack-prime but single-service, production-only (no beta images, no staging):
+GitHub Actions (`.github/workflows/`), modeled on stack-prime, production-only (no beta images, no staging):
 
 - **unit-tests.yml** — PRs to main touching `backend/main-api/**`: runs Go unit tests via reusable `_go-unit-tests.yml`.
-- **deploy.yml** — push to main touching `backend/main-api/**`: tests → semantic-release (`_go-release-docker.yml`, tag `main-api/v<version>`, config in `backend/main-api/.releaserc.json`) → Docker image to `ghcr.io/tab58/main-api` → deploy to Railway production (`_deploy-railway.yml` + `scripts/railway-deploy.sh`). Deploy only fires when a new release is published.
+- **deploy.yml** — push to main: `dorny/paths-filter` detects which service changed, then per service: semantic-release (`_go-release-docker.yml` — release + Docker steps only, nothing Go-specific despite the name) → image to GHCR → deploy to Railway production (`_deploy-railway.yml` + `scripts/railway-deploy.sh`). Deploy only fires when a new release is published.
+  - **main-api** (`backend/main-api/**`): unit tests first, tag `main-api/v<version>`, image `ghcr.io/tab58/main-api`, `.releaserc.json` in the service dir.
+  - **public-site** (`frontend/public_site/**`): no test suite, tag `public-site/v<version>`, image `ghcr.io/tab58/public-site` (`public_site.Dockerfile`: npm build → Caddy serving `dist/`; `Caddyfile` reads `PORT` and serves `/env.js` with the `BACKEND_API` env var injected at runtime — Railway sets both).
 - **main-api_migrate_db.yml** — manual (workflow_dispatch) Atlas migration apply against production DB (`MAIN_DB_URL` secret).
 - **ghcr-cleanup.yml** — nightly GHCR retention (currently `dry-run: true`).
 
-Required GitHub config: `production` environment with vars `RAILWAY_MAIN_API_SERVICE_ID`, `RAILWAY_MAIN_API_ENVIRONMENT_ID` and secrets `RAILWAY_API_TOKEN`, `MAIN_DB_URL`.
+Required GitHub config: `production` environment with vars `RAILWAY_MAIN_API_SERVICE_ID`, `RAILWAY_MAIN_API_ENVIRONMENT_ID`, `RAILWAY_PUBLIC_SITE_SERVICE_ID`, `RAILWAY_PUBLIC_SITE_ENVIRONMENT_ID` and secrets `RAILWAY_API_TOKEN`, `MAIN_DB_URL`.
 
 Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflared service in the same Railway project) routes `api.brightvintagefinds.com` → the API's Railway private domain on port 8080. A Cloudflare Access app protects `api.brightvintagefinds.com/admin`; the service's `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` env vars match it, so the in-app cfaccess guard verifies the same tokens.
 

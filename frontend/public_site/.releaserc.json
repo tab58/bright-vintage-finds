@@ -1,0 +1,40 @@
+{
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "angular",
+        "releaseRules": [
+          { "emoji": ":racehorse:", "release": "patch" },
+          { "emoji": ":bug:", "release": "patch" },
+          { "emoji": ":penguin:", "release": "patch" },
+          { "emoji": ":apple:", "release": "patch" },
+          { "emoji": ":checkered_flag:", "release": "patch" },
+          { "type": "fix", "release": "patch" },
+
+          { "emoji": ":sparkles:", "release": "minor" },
+          { "type": "feat", "release": "minor" },
+          { "breaking": true, "release": "major" }
+        ],
+        "parserOpts": {
+          "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
+        }
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "angular",
+        "parserOpts": {
+          "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
+        },
+        "writerOpts": {
+          "commitsSort": ["subject", "scope"]
+        }
+      }
+    ],
+    "@semantic-release/github"
+  ],
+  "branches": ["main"],
+  "tagFormat": "public-site/v${version}"
+}
