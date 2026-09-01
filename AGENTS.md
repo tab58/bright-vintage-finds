@@ -33,7 +33,8 @@ Do **not** read these eagerly. Read them on demand when the task calls for the i
 │       └── main-api.Dockerfile  # Multi-stage build → scratch image (build context = repo root)
 ├── frontend/                    # Empty placeholder (web client TBD)
 └── environment/
-    └── local-docker/            # Local Docker Compose: db-main-api (Postgres 17), db-main-api-migrate (Atlas), floci (S3), main-api, cloudflared (opt-in tunnel, profile "tunnel")
+    ├── local-docker/            # Local Docker Compose: db-main-api (Postgres 17), db-main-api-migrate (Atlas), floci (S3), main-api
+    └── shared/golang/           # Shared Go module (clients/aws_s3: S3 client + mocks), consumed by services via replace directive
 ```
 
 ## Common Commands
@@ -42,7 +43,6 @@ Do **not** read these eagerly. Read them on demand when the task calls for the i
 ```bash
 task up    # Start local Docker stack (dotenvx loads environment/local-docker/.env.development)
 task down  # Stop it
-task up -- cloudflared  # Additionally start the Cloudflare tunnel (needs CLOUDFLARED_TUNNEL_TOKEN in .env.development)
 ```
 
 ### main-api (backend/main-api/)
@@ -63,16 +63,17 @@ task apply-schema-direct           # Apply schema directly, no migrations
 
 ### main-api Structure
 - **cmd/app/** — `main.go`: loads config, constructs server, starts listening. No graceful shutdown yet (marked in code).
-- **cmd/app/config/** — Viper-based config. Env vars bound by reflection over `mapstructure` tags; secrets carry `json:"-"` so the startup config dump never logs them. Validates `ENV` (development|production) and `SERVER_PORT` as required. Declares (not yet used) config for AWS (region, Secrets Manager Firebase key, S3), Redis (Asynq/cache), and `MAIN_DB_URL` (Postgres).
+- **cmd/app/config/** — Viper-based config. Env vars bound by reflection over `mapstructure` tags; secrets carry `json:"-"` so the startup config dump never logs them. Validates `ENV` (development|production) and `SERVER_PORT` as required. Declares config for AWS (region, Secrets Manager Firebase key), S3 (`S3_BASE_ENDPOINT`/`S3_UPLOAD_BUCKET`, consumed at boot via the shared `aws_s3` client), Redis (Asynq/cache), and `MAIN_DB_URL` (Postgres); all but the S3 pair are not yet used.
 - **api/** — `NewServer` wraps `huma-http-server`'s `server.New`, always skips auth/logging for `/healthz` and registers the platform healthcheck. Apps must not register their own `/healthz`.
 - **db/** — Package `db_platform`: Ent schemas (`schema/` + `schema/mixin/`), generated client (`generated/`, never hand-edit), Atlas migrations (`migrations/`), pgx-backed client wrapper (`client.go`). Entities: User, Item, ItemImage. Not yet wired into the server. See `db/README.md`.
 - **internal/logger/** — slog JSON logger with configurable level and extra handlers.
+- **Object storage** — uses the shared `aws_s3` client from `environment/shared/golang/clients/aws_s3` (Railway bucket in prod, floci locally; credentials via standard AWS env vars). When `S3_BASE_ENDPOINT` is set, boot builds the client and `Ping`s (HeadBucket) the upload bucket so misconfiguration fails fast; when unset, storage is skipped and the server still boots.
 
 The HTTP framework (huma server, router, JWT auth middleware, `AuthInfoBuilder`) lives in the external module `github.com/tab58/huma-http-server`, not in this repo.
 
 ## Key Technologies
 
-**Backend:** Go 1.25, huma v2 (via `tab58/huma-http-server`), Viper (config), slog (logging), JWT auth (golang-jwt via framework), Ent ORM + Atlas migrations (Postgres, pgx driver, KSUID ids). Planned per Taskfile/config: Redis/Asynq, AWS (S3, Secrets Manager), Firebase.
+**Backend:** Go 1.25, huma v2 (via `tab58/huma-http-server`), Viper (config), slog (logging), JWT auth (golang-jwt via framework), Ent ORM + Atlas migrations (Postgres, pgx driver, KSUID ids), aws-sdk-go-v2 (S3 object storage). Planned per Taskfile/config: Redis/Asynq, AWS Secrets Manager, Firebase.
 
 **Frontend:** TBD (`frontend/` is empty).
 

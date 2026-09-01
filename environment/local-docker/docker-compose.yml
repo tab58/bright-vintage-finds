@@ -44,22 +44,6 @@ services:
       floci:
         condition: service_started
 
-  # Cloudflare tunnel exposing main-api through Cloudflare Access.
-  # Off by default (profile "tunnel"); start explicitly with
-  # `task up -- cloudflared` after setting CLOUDFLARED_TUNNEL_TOKEN
-  # in .env.development.
-  cloudflared:
-    container_name: cloudflared
-    image: cloudflare/cloudflared:latest
-    profiles: ["tunnel"]
-    command: tunnel run
-    environment:
-      TUNNEL_TOKEN: ${CLOUDFLARED_TUNNEL_TOKEN:-}
-    restart: unless-stopped
-    depends_on:
-      main-api:
-        condition: service_started
-
   # used by main-api
   db-main-api:
     container_name: db-main-api

@@ -24,3 +24,24 @@ Cloudflare Access) on `/admin` and `/admin/*` paths. Unconfigured + development
 | unit | half-configured (one of team domain / AUD) → constructor error | misconfig fails at boot, not at request time |
 | integration | none | middleware has no DB/S3 dependency; JWKS fetch covered by unit tests via local test server |
 | contract/E2E | none yet | no admin routes exist; add an E2E through the CF edge when the first admin route ships |
+
+## Object storage boot wiring (shared `aws_s3` client)
+
+**Status:** implemented
+
+main-api uses the shared S3 client from
+`environment/shared/golang/clients/aws_s3` (Railway bucket in production, floci
+locally). When `S3_BASE_ENDPOINT` is set, boot builds the client and `Ping`s
+(HeadBucket) `S3_UPLOAD_BUCKET`, so bad credentials fail fast instead of at
+first upload. Client behavior (endpoint/path-style options, Ping) is unit
+tested in the shared module (`clients/aws_s3/client_test.go`).
+
+| Level | Case | Why |
+|-------|------|-----|
+| unit (shared module) | default options → no BaseEndpoint, no path-style | plain AWS usage must stay untouched |
+| unit (shared module) | WithBaseEndpoint → BaseEndpoint + path-style set | S3-compatibles need explicit endpoint/path-style |
+| unit (shared module) | Ping against reachable bucket → nil | happy path |
+| unit (shared module) | Ping against missing bucket → error | boot check must actually detect failure |
+| unit | none in main-api | wiring is a config guard in `run()` (endpoint set but bucket empty → boot error); covered by the shared-module tests otherwise |
+| integration | none yet | no upload feature exists; add floci-backed round-trip test with the first upload endpoint |
+| contract/E2E | none yet | same — nothing user-facing consumes storage |

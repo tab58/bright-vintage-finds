@@ -16,14 +16,14 @@ RUN if [ -z "$VERSION" ]; then \
 WORKDIR /build
 
 # Copy shared library and service module files for dependency caching
-# COPY environment/shared/golang/go.mod environment/shared/golang/go.sum ./environment/shared/golang/
+COPY environment/shared/golang/go.mod environment/shared/golang/go.sum ./environment/shared/golang/
 COPY backend/main-api/go.mod backend/main-api/go.sum ./backend/main-api/
 
 RUN --mount=type=cache,target=/go/pkg/mod \
   cd backend/main-api && go mod download
 
 # Copy full source for shared lib and service
-# COPY environment/shared/golang/ ./environment/shared/golang/
+COPY environment/shared/golang/ ./environment/shared/golang/
 COPY backend/main-api/ ./backend/main-api/
 
 # Build the binary
