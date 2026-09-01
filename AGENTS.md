@@ -63,7 +63,7 @@ task apply-schema-direct           # Apply schema directly, no migrations
 
 ### main-api Structure
 - **cmd/app/** — `main.go`: loads config, constructs server, starts listening. No graceful shutdown yet (marked in code).
-- **cmd/app/config/** — Viper-based config. Env vars bound by reflection over `mapstructure` tags; secrets carry `json:"-"` so the startup config dump never logs them. Validates `ENV` (development|production), `SERVER_PORT`, `JWT_SIGNING_SECRET` as required. Declares (not yet used) config for AWS (region, Secrets Manager Firebase key, S3), Redis (Asynq/cache), and `MAIN_DB_URL` (Postgres).
+- **cmd/app/config/** — Viper-based config. Env vars bound by reflection over `mapstructure` tags; secrets carry `json:"-"` so the startup config dump never logs them. Validates `ENV` (development|production) and `SERVER_PORT` as required. Declares (not yet used) config for AWS (region, Secrets Manager Firebase key, S3), Redis (Asynq/cache), and `MAIN_DB_URL` (Postgres).
 - **api/** — `NewServer` wraps `huma-http-server`'s `server.New`, always skips auth/logging for `/healthz` and registers the platform healthcheck. Apps must not register their own `/healthz`.
 - **db/** — Package `db_platform`: Ent schemas (`schema/` + `schema/mixin/`), generated client (`generated/`, never hand-edit), Atlas migrations (`migrations/`), pgx-backed client wrapper (`client.go`). Entities: User, Item, ItemImage. Not yet wired into the server. See `db/README.md`.
 - **internal/logger/** — slog JSON logger with configurable level and extra handlers.
@@ -86,6 +86,8 @@ GitHub Actions (`.github/workflows/`), modeled on stack-prime but single-service
 - **ghcr-cleanup.yml** — nightly GHCR retention (currently `dry-run: true`).
 
 Required GitHub config: `production` environment with vars `RAILWAY_MAIN_API_SERVICE_ID`, `RAILWAY_MAIN_API_ENVIRONMENT_ID` and secrets `RAILWAY_API_TOKEN`, `MAIN_DB_URL`.
+
+Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflared service in the same Railway project) routes `api.brightvintagefinds.com` → the API's Railway private domain on port 8080. A Cloudflare Access app protects `api.brightvintagefinds.com/admin`; the service's `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` env vars match it, so the in-app cfaccess guard verifies the same tokens.
 
 ## Code Generation
 
