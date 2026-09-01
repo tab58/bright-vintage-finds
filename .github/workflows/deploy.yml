@@ -1,0 +1,38 @@
+name: Deploy
+
+on:
+  push:
+    paths:
+      - "backend/main-api/**"
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # ponytail: single service — trigger paths replace the dorny/paths-filter
+  # detect-changes job; reinstate it when a second service appears.
+  test-main-api:
+    uses: ./.github/workflows/_go-unit-tests.yml
+    with:
+      service-path: backend/main-api
+      go-version: "1.25.x"
+
+  main-api:
+    needs: test-main-api
+    uses: ./.github/workflows/_go-release-docker.yml
+    with:
+      service-path: backend/main-api
+      image-name: main-api
+      tag-prefix: "main-api/v"
+      docker-context: "."
+      dockerfile-path: backend/main-api/main-api.Dockerfile
+    secrets: inherit
+
+  deploy-main-api:
+    needs: main-api
+    if: needs.main-api.outputs.new_release_published == 'true'
+    uses: ./.github/workflows/_deploy-railway.yml
+    with:
+      service: main-api
+      version: ${{ needs.main-api.outputs.new_release_version }}
+    secrets: inherit

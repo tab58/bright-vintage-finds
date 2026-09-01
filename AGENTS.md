@@ -18,6 +18,10 @@ Do **not** read these eagerly. Read them on demand when the task calls for the i
 
 ```
 /
+├── .github/
+│   ├── workflows/               # CI/CD: unit tests (PR), deploy (push to main), DB migrate, GHCR cleanup
+│   ├── scripts/railway-deploy.sh # Points a Railway service at a new image + triggers redeploy
+│   └── CODEOWNERS
 ├── backend/
 │   └── main-api/                # Go HTTP API (sole service so far)
 │       ├── cmd/app/             # Entry point (main.go) + config/ (Viper env loading)
@@ -71,6 +75,17 @@ The HTTP framework (huma server, router, JWT auth middleware, `AuthInfoBuilder`)
 **Backend:** Go 1.25, huma v2 (via `tab58/huma-http-server`), Viper (config), slog (logging), JWT auth (golang-jwt via framework), Ent ORM + Atlas migrations (Postgres, pgx driver, KSUID ids). Planned per Taskfile/config: Redis/Asynq, AWS (S3, Secrets Manager), Firebase.
 
 **Frontend:** TBD (`frontend/` is empty).
+
+## CI/CD
+
+GitHub Actions (`.github/workflows/`), modeled on stack-prime but single-service, production-only (no beta images, no staging):
+
+- **unit-tests.yml** — PRs to main touching `backend/main-api/**`: runs Go unit tests via reusable `_go-unit-tests.yml`.
+- **deploy.yml** — push to main touching `backend/main-api/**`: tests → semantic-release (`_go-release-docker.yml`, tag `main-api/v<version>`, config in `backend/main-api/.releaserc.json`) → Docker image to `ghcr.io/tab58/main-api` → deploy to Railway production (`_deploy-railway.yml` + `scripts/railway-deploy.sh`). Deploy only fires when a new release is published.
+- **main-api_migrate_db.yml** — manual (workflow_dispatch) Atlas migration apply against production DB (`MAIN_DB_URL` secret).
+- **ghcr-cleanup.yml** — nightly GHCR retention (currently `dry-run: true`).
+
+Required GitHub config: `production` environment with vars `RAILWAY_MAIN_API_SERVICE_ID`, `RAILWAY_MAIN_API_ENVIRONMENT_ID` and secrets `RAILWAY_API_TOKEN`, `MAIN_DB_URL`.
 
 ## Code Generation
 

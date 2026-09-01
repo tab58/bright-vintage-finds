@@ -1,0 +1,23 @@
+name: GHCR -- cleanup old images
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  cleanup-releases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove old release images from GHCR (main-api)
+        uses: snok/container-retention-policy@v3.0.0
+        with:
+          account: "tab58"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          package-name: main-api
+          package-type: "container"
+          image-tags: "!latest"
+          tag-selection: both
+          cut-off: "90d"
+          keep-n-most-recent: 20
+          dry-run: true

@@ -1,0 +1,80 @@
+name: Deploy to Railway
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: "Service to deploy (main-api)"
+        required: true
+        type: string
+      version:
+        description: "Image tag to deploy (e.g. 1.2.3). Combined with service to form ghcr.io/tab58/<service>:<version>."
+        required: true
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to deploy"
+        required: true
+        type: choice
+        options:
+          - main-api
+      version:
+        description: "Image tag to deploy (e.g. 1.2.3)"
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+
+      # Env vars resolve against the `production` GitHub Environment.
+      - name: Resolve Railway targets
+        id: resolve
+        env:
+          RAILWAY_MAIN_API_SERVICE_ID: ${{ vars.RAILWAY_MAIN_API_SERVICE_ID }}
+          RAILWAY_MAIN_API_ENVIRONMENT_ID: ${{ vars.RAILWAY_MAIN_API_ENVIRONMENT_ID }}
+        run: |
+          set -euo pipefail
+
+          require() {
+            if [ -z "${!1:-}" ]; then
+              echo "Required variable $1 is not set" >&2
+              exit 1
+            fi
+          }
+
+          case "${{ inputs.service }}" in
+            main-api)
+              require RAILWAY_MAIN_API_SERVICE_ID
+              require RAILWAY_MAIN_API_ENVIRONMENT_ID
+              targets=$(jq -nc \
+                --arg sid "$RAILWAY_MAIN_API_SERVICE_ID" \
+                --arg eid "$RAILWAY_MAIN_API_ENVIRONMENT_ID" \
+                '[{service_id:$sid, environment_id:$eid}]')
+              ;;
+            *)
+              echo "Unknown service: ${{ inputs.service }}" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy ${{ inputs.service }} to Railway (production)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_API_TOKEN }}
+          IMAGE: ghcr.io/tab58/${{ inputs.service }}:${{ inputs.version }}
+          TARGETS: ${{ steps.resolve.outputs.targets }}
+        run: |
+          set -euo pipefail
+          echo "$TARGETS" | jq -c '.[]' | while read -r target; do
+            SERVICE_ID=$(echo "$target" | jq -r '.service_id')
+            ENVIRONMENT_ID=$(echo "$target" | jq -r '.environment_id')
+            export SERVICE_ID ENVIRONMENT_ID
+            ./.github/scripts/railway-deploy.sh
+          done

@@ -1,0 +1,38 @@
+name: main-api -- migrate database schema
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate-db:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+          sparse-checkout: |
+            backend/main-api/db/migrations
+
+      - name: Setup Atlas CLI
+        uses: ariga/setup-atlas@master
+
+      - name: Check Atlas CLI version
+        run: |
+          atlas version
+
+      - name: Show migrations directory
+        id: get-migrations
+        env:
+          MIGRATIONS_DIR: backend/main-api/db/migrations
+        run: |
+          ls -la ${{ env.MIGRATIONS_DIR }} || true
+          echo "migrations_dir=${{ env.MIGRATIONS_DIR }}" >> "$GITHUB_OUTPUT"
+
+      - name: Apply migrations to production DB
+        run: |
+          atlas migrate apply \
+          --dir "file://${{ steps.get-migrations.outputs.migrations_dir }}" \
+          --url "${{ secrets.MAIN_DB_URL }}" \
+          --revisions-schema "public" \
+          --allow-dirty

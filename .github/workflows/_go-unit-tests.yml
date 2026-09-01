@@ -1,0 +1,64 @@
+name: Reusable -- Go unit tests
+
+on:
+  workflow_call:
+    inputs:
+      service-path:
+        description: "Path to the Go service (e.g., services/megatron-api)"
+        required: true
+        type: string
+      go-version:
+        description: "Go version to use (e.g., 1.24.x)"
+        required: true
+        type: string
+      test-exclusions:
+        description: "Egrep pattern for packages to exclude (e.g., /mocks|/logger)"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go ${{ inputs.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ inputs.go-version }}
+
+      - name: Run unit tests
+        working-directory: ${{ inputs.service-path }}
+        run: |
+          # Build the package list (with optional exclusions)
+          if [ -n "${{ inputs.test-exclusions }}" ]; then
+            PKGS=$(go list ./... | egrep -v '${{ inputs.test-exclusions }}')
+          else
+            PKGS=$(go list ./...)
+          fi
+
+          # Filter to only packages that contain test files to avoid
+          # "go: no such tool covdata" warnings on non-test packages (Go 1.24+)
+          TEST_PKGS=""
+          for pkg in $PKGS; do
+            if go list -f '{{if .TestGoFiles}}{{.ImportPath}}{{end}}' "$pkg" | grep -q .; then
+              TEST_PKGS="$TEST_PKGS $pkg"
+            fi
+          done
+
+          if [ -z "$TEST_PKGS" ]; then
+            echo "No test packages found"
+            exit 0
+          fi
+
+          go test -coverprofile=coverage.out $TEST_PKGS
+
+      - name: Show coverage summary
+        working-directory: ${{ inputs.service-path }}
+        run: |
+          if [ -f coverage.out ]; then
+            go tool cover -func=coverage.out
+          else
+            echo "No coverage data generated"
+          fi
