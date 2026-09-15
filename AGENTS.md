@@ -98,9 +98,11 @@ GitHub Actions (`.github/workflows/`), modeled on stack-prime, production-only (
 - **main-api_migrate_db.yml** — manual (workflow_dispatch) Atlas migration apply against production DB (`MAIN_DB_URL` secret).
 - **ghcr-cleanup.yml** — nightly GHCR retention (currently `dry-run: true`).
 
+Full production configuration (accounts, service IDs, DNS records, per-service env vars, Cloudflare Access) and the deploy/rollback/migration procedure live in `docs/agents/DEPLOYMENT.md`.
+
 Required GitHub config: `production` environment with vars `RAILWAY_MAIN_API_SERVICE_ID`, `RAILWAY_MAIN_API_ENVIRONMENT_ID`, `RAILWAY_PUBLIC_SITE_SERVICE_ID`, `RAILWAY_PUBLIC_SITE_ENVIRONMENT_ID` and secrets `RAILWAY_API_TOKEN`, `MAIN_DB_URL`.
 
-Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflared service in the same Railway project) routes both hostnames to Railway private domains on port 8080. The inventory PWA and the admin API share the `brightvintagefinds.com` origin: Caddy reverse-proxies `/admin/*` to the API, so the Cloudflare Access cookie is first-party and no CORS preflight is involved. The `main-api-admin` Access app protects three destinations — `api.brightvintagefinds.com/admin`, `brightvintagefinds.com/admin`, and `brightvintagefinds.com/inventory` — under one policy (`allow-owner`) and therefore one AUD, which the API's `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` match so the in-app cfaccess guard verifies the same tokens. The splash page at `/` stays public.
+Production ingress uses two mechanisms: `brightvintagefinds.com` is a proxied CNAME to the frontend's Railway public domain (`gg11n5o0.up.railway.app`), while `api.brightvintagefinds.com` is a Cloudflare Tunnel record (`brightvintagefinds-main`, cloudflared service in the same Railway project) routing to the API's private domain `bright-vintage-finds.railway.internal:8080` — the API has no public Railway domain. The inventory PWA and the admin API share the `brightvintagefinds.com` origin: Caddy reverse-proxies `/admin/*` to the API, so the Cloudflare Access cookie is first-party and no CORS preflight is involved. The `main-api-admin` Access app protects three destinations — `api.brightvintagefinds.com/admin`, `brightvintagefinds.com/admin`, and `brightvintagefinds.com/inventory` — under one policy (`allow-owner`) and therefore one AUD, which the API's `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` match so the in-app cfaccess guard verifies the same tokens. The splash page at `/` stays public.
 
 ## Code Generation
 
