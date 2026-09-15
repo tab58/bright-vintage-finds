@@ -92,7 +92,7 @@ The HTTP framework (huma server, router, JWT auth middleware, `AuthInfoBuilder`)
 GitHub Actions (`.github/workflows/`), modeled on stack-prime, production-only (no beta images, no staging):
 
 - **unit-tests.yml** — PRs to main touching `backend/main-api/**`: runs Go unit tests via reusable `_go-unit-tests.yml`.
-- **deploy.yml** — push to main: `dorny/paths-filter` detects which service changed, then per service: semantic-release (`_go-release-docker.yml` — release + Docker steps only, nothing Go-specific despite the name) → image to GHCR → deploy to Railway production (`_deploy-railway.yml` + `scripts/railway-deploy.sh`). Deploy only fires when a new release is published.
+- **deploy.yml** — push to main: `dorny/paths-filter` detects which service changed, then per service: semantic-release (`_go-release-docker.yml` — release + Docker steps only, nothing Go-specific despite the name) → image to GHCR → deploy to Railway production (`_deploy-railway.yml` + `scripts/railway-deploy.sh`). Deploy only fires when a new release is published. `railway-deploy.sh` polls the deployment to a terminal status and fails the job on `FAILED`/`CRASHED` (`DEPLOY_TIMEOUT_SECONDS`, default 600) — a crash-looping container leaves the previous one serving, which otherwise reports as a green deploy. `bash .github/scripts/railway-deploy.sh --self-test` checks the status classification offline.
   - **main-api** (`backend/main-api/**`): unit tests first, tag `main-api/v<version>`, image `ghcr.io/tab58/main-api`, `.releaserc.json` in the service dir.
   - **public-site** (`frontend/public_site/**`): no test suite, tag `public-site/v<version>`, image `ghcr.io/tab58/public-site` (`public_site.Dockerfile`: npm build → Caddy serving `dist/`; `Caddyfile` reads `PORT`, reverse-proxies `/admin/*` to `API_UPSTREAM` (the API's Railway private domain), and serves `/env.js` with the `BACKEND_API` env var injected at runtime).
 - **main-api_migrate_db.yml** — manual (workflow_dispatch) Atlas migration apply against production DB (`MAIN_DB_URL` secret).
@@ -118,6 +118,7 @@ Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflare
 ## Known Drift / TODOs
 
 - `.env.development` is required by `task run` but is not checked in.
+- `db/migrations/20260915051245_inventory_core_schema.sql` is not yet applied to production; until `main-api_migrate_db.yml` is dispatched, main-api v1.2.0 crash-loops on the selling-place seed and Railway keeps serving v1.1.0 (healthz-only, so every `/admin` route 404s).
 - `MAIN_DB_URL` is required in production; optional in development (boots healthz-only without it).
 - The inventory PWA lives inside `public_site/` (route `/inventory*`); it deploys with the existing public-site pipeline. A browser/phone pass-through of the intake flow is still pending.
 - The same-origin `/admin` proxy needs matching production config, not yet applied: set `API_UPSTREAM` on the frontend service, clear `BACKEND_API` (empty = same-origin base in `src/api/client.ts`), and point the Cloudflare Access app at `brightvintagefinds.com/admin` + `/inventory`, updating the API's `CF_ACCESS_AUD` to the new app.

@@ -16,6 +16,9 @@ handle /admin/* {
 # same-origin base.
 handle /env.js {
 	header Content-Type "text/javascript; charset=utf-8"
+	# Runtime config, not a static asset: without this Cloudflare caches it by
+	# the .js extension and serves a stale BACKEND_API for hours after a deploy.
+	header Cache-Control "no-store"
 	respond `window.BACKEND_API = "{$BACKEND_API}";`
 }
 
