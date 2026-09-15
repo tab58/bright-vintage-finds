@@ -34,6 +34,8 @@ services:
       SERVER_PORT: "3000"
       MAIN_DB_URL: postgresql://postgres:postgres@db-main-api:5432/maindb?sslmode=disable
       S3_BASE_ENDPOINT: http://floci:4566
+      # reachable from the host / phone; floci's port is published on 4566
+      S3_PUBLIC_ENDPOINT: http://localhost:4566
     ports:
       - "3000:3000"
     depends_on:

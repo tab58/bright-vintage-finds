@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"main-api/db/generated/item"
 	"main-api/db/generated/itemimage"
+	"main-api/db/generated/label"
+	"main-api/db/generated/sellingplace"
 	"main-api/db/generated/user"
 	"reflect"
 	"sync"
@@ -75,9 +77,11 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			item.Table:      item.ValidColumn,
-			itemimage.Table: itemimage.ValidColumn,
-			user.Table:      user.ValidColumn,
+			item.Table:         item.ValidColumn,
+			itemimage.Table:    itemimage.ValidColumn,
+			label.Table:        label.ValidColumn,
+			sellingplace.Table: sellingplace.ValidColumn,
+			user.Table:         user.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

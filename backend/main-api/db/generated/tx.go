@@ -16,6 +16,10 @@ type Tx struct {
 	Item *ItemClient
 	// ItemImage is the client for interacting with the ItemImage builders.
 	ItemImage *ItemImageClient
+	// Label is the client for interacting with the Label builders.
+	Label *LabelClient
+	// SellingPlace is the client for interacting with the SellingPlace builders.
+	SellingPlace *SellingPlaceClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -151,6 +155,8 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Item = NewItemClient(tx.config)
 	tx.ItemImage = NewItemImageClient(tx.config)
+	tx.Label = NewLabelClient(tx.config)
+	tx.SellingPlace = NewSellingPlaceClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 

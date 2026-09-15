@@ -5,6 +5,7 @@ package generated
 import (
 	"fmt"
 	"main-api/db/generated/item"
+	"main-api/db/generated/sellingplace"
 	"main-api/db/generated/user"
 	"strings"
 	"time"
@@ -38,12 +39,34 @@ type Item struct {
 	Status item.Status `json:"status,omitempty"`
 	// AcquisitionCostCents holds the value of the "acquisition_cost_cents" field.
 	AcquisitionCostCents *int64 `json:"acquisition_cost_cents,omitempty"`
+	// PurchasedAt holds the value of the "purchased_at" field.
+	PurchasedAt *time.Time `json:"purchased_at,omitempty"`
 	// ListingPriceCents holds the value of the "listing_price_cents" field.
 	ListingPriceCents *int64 `json:"listing_price_cents,omitempty"`
+	// Length holds the value of the "length" field.
+	Length *float64 `json:"length,omitempty"`
+	// Width holds the value of the "width" field.
+	Width *float64 `json:"width,omitempty"`
+	// Height holds the value of the "height" field.
+	Height *float64 `json:"height,omitempty"`
+	// MeasurementUnit holds the value of the "measurement_unit" field.
+	MeasurementUnit item.MeasurementUnit `json:"measurement_unit,omitempty"`
+	// ExtraMeasurements holds the value of the "extra_measurements" field.
+	ExtraMeasurements *string `json:"extra_measurements,omitempty"`
+	// WeightLbs holds the value of the "weight_lbs" field.
+	WeightLbs *int `json:"weight_lbs,omitempty"`
+	// WeightOz holds the value of the "weight_oz" field.
+	WeightOz *float64 `json:"weight_oz,omitempty"`
+	// Notes holds the value of the "notes" field.
+	Notes *string `json:"notes,omitempty"`
+	// WhatnotNumber holds the value of the "whatnot_number" field.
+	WhatnotNumber *string `json:"whatnot_number,omitempty"`
 	// SoldPriceCents holds the value of the "sold_price_cents" field.
 	SoldPriceCents *int64 `json:"sold_price_cents,omitempty"`
 	// SoldAt holds the value of the "sold_at" field.
 	SoldAt *time.Time `json:"sold_at,omitempty"`
+	// SoldPlaceID holds the value of the "sold_place_id" field.
+	SoldPlaceID *string `json:"sold_place_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ItemQuery when eager-loading is set.
 	Edges        ItemEdges `json:"edges"`
@@ -57,9 +80,15 @@ type ItemEdges struct {
 	Owner *User `json:"owner,omitempty"`
 	// Images holds the value of the images edge.
 	Images []*ItemImage `json:"images,omitempty"`
+	// SellingPlaces holds the value of the selling_places edge.
+	SellingPlaces []*SellingPlace `json:"selling_places,omitempty"`
+	// Labels holds the value of the labels edge.
+	Labels []*Label `json:"labels,omitempty"`
+	// SoldPlace holds the value of the sold_place edge.
+	SoldPlace *SellingPlace `json:"sold_place,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [5]bool
 }
 
 // OwnerOrErr returns the Owner value or an error if the edge
@@ -82,16 +111,47 @@ func (e ItemEdges) ImagesOrErr() ([]*ItemImage, error) {
 	return nil, &NotLoadedError{edge: "images"}
 }
 
+// SellingPlacesOrErr returns the SellingPlaces value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) SellingPlacesOrErr() ([]*SellingPlace, error) {
+	if e.loadedTypes[2] {
+		return e.SellingPlaces, nil
+	}
+	return nil, &NotLoadedError{edge: "selling_places"}
+}
+
+// LabelsOrErr returns the Labels value or an error if the edge
+// was not loaded in eager-loading.
+func (e ItemEdges) LabelsOrErr() ([]*Label, error) {
+	if e.loadedTypes[3] {
+		return e.Labels, nil
+	}
+	return nil, &NotLoadedError{edge: "labels"}
+}
+
+// SoldPlaceOrErr returns the SoldPlace value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemEdges) SoldPlaceOrErr() (*SellingPlace, error) {
+	if e.SoldPlace != nil {
+		return e.SoldPlace, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: sellingplace.Label}
+	}
+	return nil, &NotLoadedError{edge: "sold_place"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Item) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case item.FieldVersion, item.FieldAcquisitionCostCents, item.FieldListingPriceCents, item.FieldSoldPriceCents:
+		case item.FieldLength, item.FieldWidth, item.FieldHeight, item.FieldWeightOz:
+			values[i] = new(sql.NullFloat64)
+		case item.FieldVersion, item.FieldAcquisitionCostCents, item.FieldListingPriceCents, item.FieldWeightLbs, item.FieldSoldPriceCents:
 			values[i] = new(sql.NullInt64)
-		case item.FieldID, item.FieldName, item.FieldDescription, item.FieldCategory, item.FieldCondition, item.FieldStatus:
+		case item.FieldID, item.FieldName, item.FieldDescription, item.FieldCategory, item.FieldCondition, item.FieldStatus, item.FieldMeasurementUnit, item.FieldExtraMeasurements, item.FieldNotes, item.FieldWhatnotNumber, item.FieldSoldPlaceID:
 			values[i] = new(sql.NullString)
-		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldDeletedAt, item.FieldSoldAt:
+		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldDeletedAt, item.FieldPurchasedAt, item.FieldSoldAt:
 			values[i] = new(sql.NullTime)
 		case item.ForeignKeys[0]: // user_items
 			values[i] = new(sql.NullString)
@@ -181,12 +241,81 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				_m.AcquisitionCostCents = new(int64)
 				*_m.AcquisitionCostCents = value.Int64
 			}
+		case item.FieldPurchasedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field purchased_at", values[i])
+			} else if value.Valid {
+				_m.PurchasedAt = new(time.Time)
+				*_m.PurchasedAt = value.Time
+			}
 		case item.FieldListingPriceCents:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field listing_price_cents", values[i])
 			} else if value.Valid {
 				_m.ListingPriceCents = new(int64)
 				*_m.ListingPriceCents = value.Int64
+			}
+		case item.FieldLength:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field length", values[i])
+			} else if value.Valid {
+				_m.Length = new(float64)
+				*_m.Length = value.Float64
+			}
+		case item.FieldWidth:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field width", values[i])
+			} else if value.Valid {
+				_m.Width = new(float64)
+				*_m.Width = value.Float64
+			}
+		case item.FieldHeight:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field height", values[i])
+			} else if value.Valid {
+				_m.Height = new(float64)
+				*_m.Height = value.Float64
+			}
+		case item.FieldMeasurementUnit:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field measurement_unit", values[i])
+			} else if value.Valid {
+				_m.MeasurementUnit = item.MeasurementUnit(value.String)
+			}
+		case item.FieldExtraMeasurements:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field extra_measurements", values[i])
+			} else if value.Valid {
+				_m.ExtraMeasurements = new(string)
+				*_m.ExtraMeasurements = value.String
+			}
+		case item.FieldWeightLbs:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field weight_lbs", values[i])
+			} else if value.Valid {
+				_m.WeightLbs = new(int)
+				*_m.WeightLbs = int(value.Int64)
+			}
+		case item.FieldWeightOz:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field weight_oz", values[i])
+			} else if value.Valid {
+				_m.WeightOz = new(float64)
+				*_m.WeightOz = value.Float64
+			}
+		case item.FieldNotes:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field notes", values[i])
+			} else if value.Valid {
+				_m.Notes = new(string)
+				*_m.Notes = value.String
+			}
+		case item.FieldWhatnotNumber:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field whatnot_number", values[i])
+			} else if value.Valid {
+				_m.WhatnotNumber = new(string)
+				*_m.WhatnotNumber = value.String
 			}
 		case item.FieldSoldPriceCents:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -201,6 +330,13 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SoldAt = new(time.Time)
 				*_m.SoldAt = value.Time
+			}
+		case item.FieldSoldPlaceID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field sold_place_id", values[i])
+			} else if value.Valid {
+				_m.SoldPlaceID = new(string)
+				*_m.SoldPlaceID = value.String
 			}
 		case item.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -230,6 +366,21 @@ func (_m *Item) QueryOwner() *UserQuery {
 // QueryImages queries the "images" edge of the Item entity.
 func (_m *Item) QueryImages() *ItemImageQuery {
 	return NewItemClient(_m.config).QueryImages(_m)
+}
+
+// QuerySellingPlaces queries the "selling_places" edge of the Item entity.
+func (_m *Item) QuerySellingPlaces() *SellingPlaceQuery {
+	return NewItemClient(_m.config).QuerySellingPlaces(_m)
+}
+
+// QueryLabels queries the "labels" edge of the Item entity.
+func (_m *Item) QueryLabels() *LabelQuery {
+	return NewItemClient(_m.config).QueryLabels(_m)
+}
+
+// QuerySoldPlace queries the "sold_place" edge of the Item entity.
+func (_m *Item) QuerySoldPlace() *SellingPlaceQuery {
+	return NewItemClient(_m.config).QuerySoldPlace(_m)
 }
 
 // Update returns a builder for updating this Item.
@@ -295,9 +446,57 @@ func (_m *Item) String() string {
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
+	if v := _m.PurchasedAt; v != nil {
+		builder.WriteString("purchased_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
 	if v := _m.ListingPriceCents; v != nil {
 		builder.WriteString("listing_price_cents=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Length; v != nil {
+		builder.WriteString("length=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Width; v != nil {
+		builder.WriteString("width=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Height; v != nil {
+		builder.WriteString("height=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("measurement_unit=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MeasurementUnit))
+	builder.WriteString(", ")
+	if v := _m.ExtraMeasurements; v != nil {
+		builder.WriteString("extra_measurements=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.WeightLbs; v != nil {
+		builder.WriteString("weight_lbs=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.WeightOz; v != nil {
+		builder.WriteString("weight_oz=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Notes; v != nil {
+		builder.WriteString("notes=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.WhatnotNumber; v != nil {
+		builder.WriteString("whatnot_number=")
+		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	if v := _m.SoldPriceCents; v != nil {
@@ -308,6 +507,11 @@ func (_m *Item) String() string {
 	if v := _m.SoldAt; v != nil {
 		builder.WriteString("sold_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.SoldPlaceID; v != nil {
+		builder.WriteString("sold_place_id=")
+		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')
 	return builder.String()

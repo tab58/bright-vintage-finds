@@ -13,6 +13,7 @@ import (
 	context "context"
 	io "io"
 	reflect "reflect"
+	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -97,6 +98,21 @@ func (m *MockClient) Ping(ctx context.Context, bucket string) error {
 func (mr *MockClientMockRecorder) Ping(ctx, bucket any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockClient)(nil).Ping), ctx, bucket)
+}
+
+// PresignGetObject mocks base method.
+func (m *MockClient) PresignGetObject(ctx context.Context, bucket, key string, ttl time.Duration) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PresignGetObject", ctx, bucket, key, ttl)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PresignGetObject indicates an expected call of PresignGetObject.
+func (mr *MockClientMockRecorder) PresignGetObject(ctx, bucket, key, ttl any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PresignGetObject", reflect.TypeOf((*MockClient)(nil).PresignGetObject), ctx, bucket, key, ttl)
 }
 
 // UploadFile mocks base method.

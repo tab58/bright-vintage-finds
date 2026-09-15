@@ -4,7 +4,7 @@ This repo documents itself through `AGENTS.md` files. They are the source of tru
 
 ## Project Overview
 
-bright-vintage-finds is an early-stage monorepo for a vintage-goods selling platform: a public-facing website combined with an inventory system for the site. The owner uploads pictures and details of items to sell, gains insight into their own sales, and may eventually get a sales portal. Currently one Go service exists: `backend/main-api`, an HTTP API built on the external `github.com/tab58/huma-http-server` framework (huma-based server with JWT auth and router plumbing). It boots a server, registers a `/healthz` route, loads config from env vars via Viper, and guards `/admin` routes by verifying Cloudflare Access assertions (`internal/cfaccess`; open in development, fail-closed in production when `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` are unset). `frontend/` holds web clients, one folder per client; the only one so far is `frontend/public_site/`, a single static splash page (Vite + React + TypeScript + StyleX) with hardcoded content — no routing, no API calls. `environment/local-docker/` holds the local Docker environment (Postgres + Atlas migration runner + floci S3 + main-api), started with `task up` from the repo root.
+bright-vintage-finds is an early-stage monorepo for a vintage-goods selling platform: a public-facing website combined with an inventory system for the site. The owner uploads pictures and details of items to sell, gains insight into their own sales, and may eventually get a sales portal. Currently one Go service exists: `backend/main-api`, an HTTP API built on the external `github.com/tab58/huma-http-server` framework (huma-based server with JWT auth and router plumbing). It boots a server, registers a `/healthz` route, loads config from env vars via Viper, and guards `/admin` routes by verifying Cloudflare Access assertions (`internal/cfaccess`; open in development, fail-closed in production when `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` are unset). `frontend/` holds one web client, `frontend/public_site/` (Vite + React + TypeScript + StyleX): the splash page at `/` plus the owner-facing inventory PWA at `/inventory*` (routing, intake/search/mark-sold pages, typed API client) talking to the `/admin` inventory API. `environment/local-docker/` holds the local Docker environment (Postgres + Atlas migration runner + floci S3 + main-api), started with `task up` from the repo root.
 
 ## Reference Documentation
 
@@ -32,13 +32,15 @@ Do **not** read these eagerly. Read them on demand when the task calls for the i
 │       ├── Taskfile.yml         # run / test / generate / migration tasks
 │       └── main-api.Dockerfile  # Multi-stage build → scratch image (build context = repo root)
 ├── frontend/                    # Web clients, one folder per client
-│   └── public_site/             # Static splash page (Vite + React + TS + StyleX), served by Caddy in prod
-│       ├── src/App.tsx          # Splash page component (all content hardcoded)
-│       ├── src/assets/          # Images cropped from Whatnot profile screenshot
+│   └── public_site/             # Splash page (/) + inventory PWA (/inventory*), Vite + React + TS + StyleX
+│       ├── src/App.tsx          # Router: splash at /, inventory pages under /inventory
+│       ├── src/pages/           # Inventory (search/filter list), Intake (photos + all fields), Item (detail, edit, mark-sold)
+│       ├── src/api/client.ts    # Typed fetch client for the /admin inventory API
+│       ├── src/assets/          # Splash page art
 │       ├── public/env.js        # Dev default for window.BACKEND_API (prod: Caddy injects it)
 │       ├── Caddyfile            # Serves dist/ on $PORT; /env.js exposes $BACKEND_API at runtime
 │       ├── public_site.Dockerfile # npm build → caddy:2-alpine (build context = this dir)
-│       └── vite.config.ts       # Vite + vite-plugin-stylex (src/index.css holds the @stylex marker)
+│       └── vite.config.ts       # StyleX + PWA (install-only) + dev proxy /admin → localhost:3000
 └── environment/
     ├── local-docker/            # Local Docker Compose: db-main-api (Postgres 17), db-main-api-migrate (Atlas), floci (S3), main-api
     └── shared/golang/           # Shared Go module (clients/aws_s3: S3 client + mocks), consumed by services via replace directive
@@ -71,9 +73,9 @@ task apply-schema-direct           # Apply schema directly, no migrations
 
 ### main-api Structure
 - **cmd/app/** — `main.go`: loads config, constructs server, starts listening. No graceful shutdown yet (marked in code).
-- **cmd/app/config/** — Viper-based config. Env vars bound by reflection over `mapstructure` tags; secrets carry `json:"-"` so the startup config dump never logs them. Validates `ENV` (development|production) and `SERVER_PORT` as required. Declares config for AWS (region, Secrets Manager Firebase key), S3 (`S3_BASE_ENDPOINT`/`S3_UPLOAD_BUCKET`, consumed at boot via the shared `aws_s3` client), Redis (Asynq/cache), and `MAIN_DB_URL` (Postgres); all but the S3 pair are not yet used.
-- **api/** — `NewServer` wraps `huma-http-server`'s `server.New`, always skips auth/logging for `/healthz` and registers the platform healthcheck. Apps must not register their own `/healthz`.
-- **db/** — Package `db_platform`: Ent schemas (`schema/` + `schema/mixin/`), generated client (`generated/`, never hand-edit), Atlas migrations (`migrations/`), pgx-backed client wrapper (`client.go`). Entities: User, Item, ItemImage. Not yet wired into the server. See `db/README.md`.
+- **cmd/app/config/** — Viper-based config. Env vars bound by reflection over `mapstructure` tags; secrets carry `json:"-"` so the startup config dump never logs them. Validates `ENV` (development|production) and `SERVER_PORT` as required; `MAIN_DB_URL` required in production. Declares config for AWS (region, Secrets Manager Firebase key), S3 (`S3_BASE_ENDPOINT`/`S3_UPLOAD_BUCKET`), Redis (Asynq/cache), and `MAIN_DB_URL` (Postgres); Redis and Secrets Manager are not yet used.
+- **api/** — `NewServer` wraps `huma-http-server`'s `server.New`, always skips auth/logging for `/healthz` and registers the platform healthcheck. Apps must not register their own `/healthz`. With an `AppDeps` carrying a DB client it also registers the inventory admin routes (Cloudflare-Access-guarded `/admin/*`): items CRUD + search filters (`items.go`), mark-sold, multipart image upload to S3 (`item_images.go`, registered only when storage is configured), selling-places and labels CRUD (`selling_places.go`, `labels.go`), builtin place seed at boot (`seed.go`), and a lazily-created well-known owner row (`owner.go`). Huma convention: response structs must have a `Body` field, otherwise the framework emits 204 with struct fields as headers.
+- **db/** — Package `db_platform`: Ent schemas (`schema/` + `schema/mixin/`), generated client (`generated/`, never hand-edit), Atlas migrations (`migrations/`), pgx-backed client wrapper (`client.go`; `Raw()` exposes the pool for test harnesses). Entities: User, Item, ItemImage, SellingPlace, Label. Wired into the server via `api.AppDeps` when `MAIN_DB_URL` is set (required in production). See `db/README.md`.
 - **internal/logger/** — slog JSON logger with configurable level and extra handlers.
 - **Object storage** — uses the shared `aws_s3` client from `environment/shared/golang/clients/aws_s3` (Railway bucket in prod, floci locally; credentials via standard AWS env vars). When `S3_BASE_ENDPOINT` is set, boot builds the client and `Ping`s (HeadBucket) the upload bucket so misconfiguration fails fast; when unset, storage is skipped and the server still boots.
 
@@ -81,7 +83,7 @@ The HTTP framework (huma server, router, JWT auth middleware, `AuthInfoBuilder`)
 
 ## Key Technologies
 
-**Backend:** Go 1.25, huma v2 (via `tab58/huma-http-server`), Viper (config), slog (logging), JWT auth (golang-jwt via framework), Ent ORM + Atlas migrations (Postgres, pgx driver, KSUID ids), aws-sdk-go-v2 (S3 object storage). Planned per Taskfile/config: Redis/Asynq, AWS Secrets Manager, Firebase.
+**Backend:** Go 1.27, huma v2 (via `tab58/huma-http-server`), Viper (config), slog (logging), JWT auth (golang-jwt via framework), Ent ORM + Atlas migrations (Postgres, pgx driver, KSUID ids), aws-sdk-go-v2 (S3 object storage). Planned per Taskfile/config: Redis/Asynq, AWS Secrets Manager, Firebase.
 
 **Frontend:** Vite 5, React 18, TypeScript, StyleX (via `vite-plugin-stylex`). Commands (from `frontend/public_site/`): `npm run dev` / `npm run build` / `npm run preview`.
 
@@ -107,7 +109,7 @@ Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflare
 
 ## Prerequisites
 
-- Go 1.25+
+- Go 1.27+
 - Task runner: `brew install go-task`
 - dotenvx (env var loading for `task run`)
 - Atlas CLI: `brew install ariga/tap/atlas`
@@ -116,5 +118,5 @@ Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflare
 ## Known Drift / TODOs
 
 - `.env.development` is required by `task run` but is not checked in.
-- `db/` exists but is not wired into the server yet (`MAIN_DB_URL` config declared, unused).
-- `frontend/` is empty.
+- `MAIN_DB_URL` is required in production; optional in development (boots healthz-only without it).
+- The inventory PWA lives inside `public_site/` (route `/inventory*`); it deploys with the existing public-site pipeline. A browser/phone pass-through of the intake flow is still pending.

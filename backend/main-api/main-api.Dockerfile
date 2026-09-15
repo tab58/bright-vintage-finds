@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # build stage — context must be the monorepo root
-FROM golang:1.25 AS builder
+FROM golang:1.27 AS builder
 
 ARG VERSION
 ENV VERSION=${VERSION}

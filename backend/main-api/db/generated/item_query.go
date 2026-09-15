@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"main-api/db/generated/item"
 	"main-api/db/generated/itemimage"
+	"main-api/db/generated/label"
 	"main-api/db/generated/predicate"
+	"main-api/db/generated/sellingplace"
 	"main-api/db/generated/user"
 	"math"
 
@@ -21,13 +23,16 @@ import (
 // ItemQuery is the builder for querying Item entities.
 type ItemQuery struct {
 	config
-	ctx        *QueryContext
-	order      []item.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Item
-	withOwner  *UserQuery
-	withImages *ItemImageQuery
-	withFKs    bool
+	ctx               *QueryContext
+	order             []item.OrderOption
+	inters            []Interceptor
+	predicates        []predicate.Item
+	withOwner         *UserQuery
+	withImages        *ItemImageQuery
+	withSellingPlaces *SellingPlaceQuery
+	withLabels        *LabelQuery
+	withSoldPlace     *SellingPlaceQuery
+	withFKs           bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +106,72 @@ func (_q *ItemQuery) QueryImages() *ItemImageQuery {
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(itemimage.Table, itemimage.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.ImagesTable, item.ImagesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySellingPlaces chains the current query on the "selling_places" edge.
+func (_q *ItemQuery) QuerySellingPlaces() *SellingPlaceQuery {
+	query := (&SellingPlaceClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(sellingplace.Table, sellingplace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, item.SellingPlacesTable, item.SellingPlacesPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLabels chains the current query on the "labels" edge.
+func (_q *ItemQuery) QueryLabels() *LabelQuery {
+	query := (&LabelClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(label.Table, label.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, item.LabelsTable, item.LabelsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySoldPlace chains the current query on the "sold_place" edge.
+func (_q *ItemQuery) QuerySoldPlace() *SellingPlaceQuery {
+	query := (&SellingPlaceClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, selector),
+			sqlgraph.To(sellingplace.Table, sellingplace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, item.SoldPlaceTable, item.SoldPlaceColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +366,16 @@ func (_q *ItemQuery) Clone() *ItemQuery {
 		return nil
 	}
 	return &ItemQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]item.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.Item{}, _q.predicates...),
-		withOwner:  _q.withOwner.Clone(),
-		withImages: _q.withImages.Clone(),
+		config:            _q.config,
+		ctx:               _q.ctx.Clone(),
+		order:             append([]item.OrderOption{}, _q.order...),
+		inters:            append([]Interceptor{}, _q.inters...),
+		predicates:        append([]predicate.Item{}, _q.predicates...),
+		withOwner:         _q.withOwner.Clone(),
+		withImages:        _q.withImages.Clone(),
+		withSellingPlaces: _q.withSellingPlaces.Clone(),
+		withLabels:        _q.withLabels.Clone(),
+		withSoldPlace:     _q.withSoldPlace.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -327,6 +401,39 @@ func (_q *ItemQuery) WithImages(opts ...func(*ItemImageQuery)) *ItemQuery {
 		opt(query)
 	}
 	_q.withImages = query
+	return _q
+}
+
+// WithSellingPlaces tells the query-builder to eager-load the nodes that are connected to
+// the "selling_places" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithSellingPlaces(opts ...func(*SellingPlaceQuery)) *ItemQuery {
+	query := (&SellingPlaceClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSellingPlaces = query
+	return _q
+}
+
+// WithLabels tells the query-builder to eager-load the nodes that are connected to
+// the "labels" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithLabels(opts ...func(*LabelQuery)) *ItemQuery {
+	query := (&LabelClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withLabels = query
+	return _q
+}
+
+// WithSoldPlace tells the query-builder to eager-load the nodes that are connected to
+// the "sold_place" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ItemQuery) WithSoldPlace(opts ...func(*SellingPlaceQuery)) *ItemQuery {
+	query := (&SellingPlaceClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSoldPlace = query
 	return _q
 }
 
@@ -409,9 +516,12 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		nodes       = []*Item{}
 		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [5]bool{
 			_q.withOwner != nil,
 			_q.withImages != nil,
+			_q.withSellingPlaces != nil,
+			_q.withLabels != nil,
+			_q.withSoldPlace != nil,
 		}
 	)
 	if _q.withOwner != nil {
@@ -448,6 +558,26 @@ func (_q *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		if err := _q.loadImages(ctx, query, nodes,
 			func(n *Item) { n.Edges.Images = []*ItemImage{} },
 			func(n *Item, e *ItemImage) { n.Edges.Images = append(n.Edges.Images, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSellingPlaces; query != nil {
+		if err := _q.loadSellingPlaces(ctx, query, nodes,
+			func(n *Item) { n.Edges.SellingPlaces = []*SellingPlace{} },
+			func(n *Item, e *SellingPlace) { n.Edges.SellingPlaces = append(n.Edges.SellingPlaces, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withLabels; query != nil {
+		if err := _q.loadLabels(ctx, query, nodes,
+			func(n *Item) { n.Edges.Labels = []*Label{} },
+			func(n *Item, e *Label) { n.Edges.Labels = append(n.Edges.Labels, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSoldPlace; query != nil {
+		if err := _q.loadSoldPlace(ctx, query, nodes, nil,
+			func(n *Item, e *SellingPlace) { n.Edges.SoldPlace = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -517,6 +647,160 @@ func (_q *ItemQuery) loadImages(ctx context.Context, query *ItemImageQuery, node
 	}
 	return nil
 }
+func (_q *ItemQuery) loadSellingPlaces(ctx context.Context, query *SellingPlaceQuery, nodes []*Item, init func(*Item), assign func(*Item, *SellingPlace)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[string]*Item)
+	nids := make(map[string]map[*Item]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(item.SellingPlacesTable)
+		s.Join(joinT).On(s.C(sellingplace.FieldID), joinT.C(item.SellingPlacesPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(item.SellingPlacesPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(item.SellingPlacesPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullString)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := values[0].(*sql.NullString).String
+				inValue := values[1].(*sql.NullString).String
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Item]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*SellingPlace](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "selling_places" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (_q *ItemQuery) loadLabels(ctx context.Context, query *LabelQuery, nodes []*Item, init func(*Item), assign func(*Item, *Label)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[string]*Item)
+	nids := make(map[string]map[*Item]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(item.LabelsTable)
+		s.Join(joinT).On(s.C(label.FieldID), joinT.C(item.LabelsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(item.LabelsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(item.LabelsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullString)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := values[0].(*sql.NullString).String
+				inValue := values[1].(*sql.NullString).String
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Item]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Label](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "labels" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (_q *ItemQuery) loadSoldPlace(ctx context.Context, query *SellingPlaceQuery, nodes []*Item, init func(*Item), assign func(*Item, *SellingPlace)) error {
+	ids := make([]string, 0, len(nodes))
+	nodeids := make(map[string][]*Item)
+	for i := range nodes {
+		if nodes[i].SoldPlaceID == nil {
+			continue
+		}
+		fk := *nodes[i].SoldPlaceID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(sellingplace.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "sold_place_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *ItemQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -542,6 +826,9 @@ func (_q *ItemQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != item.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withSoldPlace != nil {
+			_spec.Node.AddColumnOnce(item.FieldSoldPlaceID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

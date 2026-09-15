@@ -12,5 +12,11 @@ type Item func(*sql.Selector)
 // ItemImage is the predicate function for itemimage builders.
 type ItemImage func(*sql.Selector)
 
+// Label is the predicate function for label builders.
+type Label func(*sql.Selector)
+
+// SellingPlace is the predicate function for sellingplace builders.
+type SellingPlace func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

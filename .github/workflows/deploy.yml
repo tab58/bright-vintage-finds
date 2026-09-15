@@ -31,7 +31,7 @@ jobs:
     uses: ./.github/workflows/_go-unit-tests.yml
     with:
       service-path: backend/main-api
-      go-version: "1.25.x"
+      go-version: "1.27.x"
 
   main-api:
     needs: test-main-api

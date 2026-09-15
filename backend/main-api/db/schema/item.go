@@ -48,15 +48,57 @@ func (Item) Fields() []ent.Field {
 		field.Int64("acquisition_cost_cents").
 			Optional().
 			Nillable(),
+		field.Time("purchased_at").
+			Optional().
+			Nillable(),
 		field.Int64("listing_price_cents").
 			Optional().
 			Nillable(),
+
+		// Physical measurements. L/W/H are structured; anything irregular goes
+		// in extra_measurements.
+		field.Float("length").
+			Optional().
+			Nillable(),
+		field.Float("width").
+			Optional().
+			Nillable(),
+		field.Float("height").
+			Optional().
+			Nillable(),
+		field.Enum("measurement_unit").
+			Values("inch", "cm").
+			Default("inch"),
+		field.Text("extra_measurements").
+			Optional().
+			Nillable(),
+
+		// Weight in pounds and ounces, informational only.
+		field.Int("weight_lbs").
+			Optional().
+			Nillable(),
+		field.Float("weight_oz").
+			Optional().
+			Nillable(),
+
+		field.Text("notes").
+			Optional().
+			Nillable(),
+
+		// Whatnot listing ID (assigned by Whatnot); unique when present.
+		field.String("whatnot_number").
+			Optional().
+			Nillable().
+			Unique(),
 
 		// Set together when the item sells; sales insight is computed from these.
 		field.Int64("sold_price_cents").
 			Optional().
 			Nillable(),
 		field.Time("sold_at").
+			Optional().
+			Nillable(),
+		field.String("sold_place_id").
 			Optional().
 			Nillable(),
 	}
@@ -70,5 +112,16 @@ func (Item) Edges() []ent.Edge {
 			Required(),
 
 		edge.To("images", ItemImage.Type),
+
+		// Places this item is (or was) listed for sale.
+		edge.To("selling_places", SellingPlace.Type),
+
+		// Item-type labels.
+		edge.To("labels", Label.Type),
+
+		// The platform where the item sold, set together with the sold fields.
+		edge.To("sold_place", SellingPlace.Type).
+			Unique().
+			Field("sold_place_id"),
 	}
 }

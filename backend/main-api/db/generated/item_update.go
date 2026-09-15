@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"main-api/db/generated/item"
 	"main-api/db/generated/itemimage"
+	"main-api/db/generated/label"
 	"main-api/db/generated/predicate"
+	"main-api/db/generated/sellingplace"
 	"main-api/db/generated/user"
 	"time"
 
@@ -192,6 +194,26 @@ func (_u *ItemUpdate) ClearAcquisitionCostCents() *ItemUpdate {
 	return _u
 }
 
+// SetPurchasedAt sets the "purchased_at" field.
+func (_u *ItemUpdate) SetPurchasedAt(v time.Time) *ItemUpdate {
+	_u.mutation.SetPurchasedAt(v)
+	return _u
+}
+
+// SetNillablePurchasedAt sets the "purchased_at" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillablePurchasedAt(v *time.Time) *ItemUpdate {
+	if v != nil {
+		_u.SetPurchasedAt(*v)
+	}
+	return _u
+}
+
+// ClearPurchasedAt clears the value of the "purchased_at" field.
+func (_u *ItemUpdate) ClearPurchasedAt() *ItemUpdate {
+	_u.mutation.ClearPurchasedAt()
+	return _u
+}
+
 // SetListingPriceCents sets the "listing_price_cents" field.
 func (_u *ItemUpdate) SetListingPriceCents(v int64) *ItemUpdate {
 	_u.mutation.ResetListingPriceCents()
@@ -216,6 +238,215 @@ func (_u *ItemUpdate) AddListingPriceCents(v int64) *ItemUpdate {
 // ClearListingPriceCents clears the value of the "listing_price_cents" field.
 func (_u *ItemUpdate) ClearListingPriceCents() *ItemUpdate {
 	_u.mutation.ClearListingPriceCents()
+	return _u
+}
+
+// SetLength sets the "length" field.
+func (_u *ItemUpdate) SetLength(v float64) *ItemUpdate {
+	_u.mutation.ResetLength()
+	_u.mutation.SetLength(v)
+	return _u
+}
+
+// SetNillableLength sets the "length" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableLength(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetLength(*v)
+	}
+	return _u
+}
+
+// AddLength adds value to the "length" field.
+func (_u *ItemUpdate) AddLength(v float64) *ItemUpdate {
+	_u.mutation.AddLength(v)
+	return _u
+}
+
+// ClearLength clears the value of the "length" field.
+func (_u *ItemUpdate) ClearLength() *ItemUpdate {
+	_u.mutation.ClearLength()
+	return _u
+}
+
+// SetWidth sets the "width" field.
+func (_u *ItemUpdate) SetWidth(v float64) *ItemUpdate {
+	_u.mutation.ResetWidth()
+	_u.mutation.SetWidth(v)
+	return _u
+}
+
+// SetNillableWidth sets the "width" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableWidth(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetWidth(*v)
+	}
+	return _u
+}
+
+// AddWidth adds value to the "width" field.
+func (_u *ItemUpdate) AddWidth(v float64) *ItemUpdate {
+	_u.mutation.AddWidth(v)
+	return _u
+}
+
+// ClearWidth clears the value of the "width" field.
+func (_u *ItemUpdate) ClearWidth() *ItemUpdate {
+	_u.mutation.ClearWidth()
+	return _u
+}
+
+// SetHeight sets the "height" field.
+func (_u *ItemUpdate) SetHeight(v float64) *ItemUpdate {
+	_u.mutation.ResetHeight()
+	_u.mutation.SetHeight(v)
+	return _u
+}
+
+// SetNillableHeight sets the "height" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableHeight(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetHeight(*v)
+	}
+	return _u
+}
+
+// AddHeight adds value to the "height" field.
+func (_u *ItemUpdate) AddHeight(v float64) *ItemUpdate {
+	_u.mutation.AddHeight(v)
+	return _u
+}
+
+// ClearHeight clears the value of the "height" field.
+func (_u *ItemUpdate) ClearHeight() *ItemUpdate {
+	_u.mutation.ClearHeight()
+	return _u
+}
+
+// SetMeasurementUnit sets the "measurement_unit" field.
+func (_u *ItemUpdate) SetMeasurementUnit(v item.MeasurementUnit) *ItemUpdate {
+	_u.mutation.SetMeasurementUnit(v)
+	return _u
+}
+
+// SetNillableMeasurementUnit sets the "measurement_unit" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableMeasurementUnit(v *item.MeasurementUnit) *ItemUpdate {
+	if v != nil {
+		_u.SetMeasurementUnit(*v)
+	}
+	return _u
+}
+
+// SetExtraMeasurements sets the "extra_measurements" field.
+func (_u *ItemUpdate) SetExtraMeasurements(v string) *ItemUpdate {
+	_u.mutation.SetExtraMeasurements(v)
+	return _u
+}
+
+// SetNillableExtraMeasurements sets the "extra_measurements" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableExtraMeasurements(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetExtraMeasurements(*v)
+	}
+	return _u
+}
+
+// ClearExtraMeasurements clears the value of the "extra_measurements" field.
+func (_u *ItemUpdate) ClearExtraMeasurements() *ItemUpdate {
+	_u.mutation.ClearExtraMeasurements()
+	return _u
+}
+
+// SetWeightLbs sets the "weight_lbs" field.
+func (_u *ItemUpdate) SetWeightLbs(v int) *ItemUpdate {
+	_u.mutation.ResetWeightLbs()
+	_u.mutation.SetWeightLbs(v)
+	return _u
+}
+
+// SetNillableWeightLbs sets the "weight_lbs" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableWeightLbs(v *int) *ItemUpdate {
+	if v != nil {
+		_u.SetWeightLbs(*v)
+	}
+	return _u
+}
+
+// AddWeightLbs adds value to the "weight_lbs" field.
+func (_u *ItemUpdate) AddWeightLbs(v int) *ItemUpdate {
+	_u.mutation.AddWeightLbs(v)
+	return _u
+}
+
+// ClearWeightLbs clears the value of the "weight_lbs" field.
+func (_u *ItemUpdate) ClearWeightLbs() *ItemUpdate {
+	_u.mutation.ClearWeightLbs()
+	return _u
+}
+
+// SetWeightOz sets the "weight_oz" field.
+func (_u *ItemUpdate) SetWeightOz(v float64) *ItemUpdate {
+	_u.mutation.ResetWeightOz()
+	_u.mutation.SetWeightOz(v)
+	return _u
+}
+
+// SetNillableWeightOz sets the "weight_oz" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableWeightOz(v *float64) *ItemUpdate {
+	if v != nil {
+		_u.SetWeightOz(*v)
+	}
+	return _u
+}
+
+// AddWeightOz adds value to the "weight_oz" field.
+func (_u *ItemUpdate) AddWeightOz(v float64) *ItemUpdate {
+	_u.mutation.AddWeightOz(v)
+	return _u
+}
+
+// ClearWeightOz clears the value of the "weight_oz" field.
+func (_u *ItemUpdate) ClearWeightOz() *ItemUpdate {
+	_u.mutation.ClearWeightOz()
+	return _u
+}
+
+// SetNotes sets the "notes" field.
+func (_u *ItemUpdate) SetNotes(v string) *ItemUpdate {
+	_u.mutation.SetNotes(v)
+	return _u
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableNotes(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetNotes(*v)
+	}
+	return _u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (_u *ItemUpdate) ClearNotes() *ItemUpdate {
+	_u.mutation.ClearNotes()
+	return _u
+}
+
+// SetWhatnotNumber sets the "whatnot_number" field.
+func (_u *ItemUpdate) SetWhatnotNumber(v string) *ItemUpdate {
+	_u.mutation.SetWhatnotNumber(v)
+	return _u
+}
+
+// SetNillableWhatnotNumber sets the "whatnot_number" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableWhatnotNumber(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetWhatnotNumber(*v)
+	}
+	return _u
+}
+
+// ClearWhatnotNumber clears the value of the "whatnot_number" field.
+func (_u *ItemUpdate) ClearWhatnotNumber() *ItemUpdate {
+	_u.mutation.ClearWhatnotNumber()
 	return _u
 }
 
@@ -266,6 +497,26 @@ func (_u *ItemUpdate) ClearSoldAt() *ItemUpdate {
 	return _u
 }
 
+// SetSoldPlaceID sets the "sold_place_id" field.
+func (_u *ItemUpdate) SetSoldPlaceID(v string) *ItemUpdate {
+	_u.mutation.SetSoldPlaceID(v)
+	return _u
+}
+
+// SetNillableSoldPlaceID sets the "sold_place_id" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableSoldPlaceID(v *string) *ItemUpdate {
+	if v != nil {
+		_u.SetSoldPlaceID(*v)
+	}
+	return _u
+}
+
+// ClearSoldPlaceID clears the value of the "sold_place_id" field.
+func (_u *ItemUpdate) ClearSoldPlaceID() *ItemUpdate {
+	_u.mutation.ClearSoldPlaceID()
+	return _u
+}
+
 // SetOwnerID sets the "owner" edge to the User entity by ID.
 func (_u *ItemUpdate) SetOwnerID(id string) *ItemUpdate {
 	_u.mutation.SetOwnerID(id)
@@ -290,6 +541,41 @@ func (_u *ItemUpdate) AddImages(v ...*ItemImage) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddImageIDs(ids...)
+}
+
+// AddSellingPlaceIDs adds the "selling_places" edge to the SellingPlace entity by IDs.
+func (_u *ItemUpdate) AddSellingPlaceIDs(ids ...string) *ItemUpdate {
+	_u.mutation.AddSellingPlaceIDs(ids...)
+	return _u
+}
+
+// AddSellingPlaces adds the "selling_places" edges to the SellingPlace entity.
+func (_u *ItemUpdate) AddSellingPlaces(v ...*SellingPlace) *ItemUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSellingPlaceIDs(ids...)
+}
+
+// AddLabelIDs adds the "labels" edge to the Label entity by IDs.
+func (_u *ItemUpdate) AddLabelIDs(ids ...string) *ItemUpdate {
+	_u.mutation.AddLabelIDs(ids...)
+	return _u
+}
+
+// AddLabels adds the "labels" edges to the Label entity.
+func (_u *ItemUpdate) AddLabels(v ...*Label) *ItemUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddLabelIDs(ids...)
+}
+
+// SetSoldPlace sets the "sold_place" edge to the SellingPlace entity.
+func (_u *ItemUpdate) SetSoldPlace(v *SellingPlace) *ItemUpdate {
+	return _u.SetSoldPlaceID(v.ID)
 }
 
 // Mutation returns the ItemMutation object of the builder.
@@ -322,6 +608,54 @@ func (_u *ItemUpdate) RemoveImages(v ...*ItemImage) *ItemUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveImageIDs(ids...)
+}
+
+// ClearSellingPlaces clears all "selling_places" edges to the SellingPlace entity.
+func (_u *ItemUpdate) ClearSellingPlaces() *ItemUpdate {
+	_u.mutation.ClearSellingPlaces()
+	return _u
+}
+
+// RemoveSellingPlaceIDs removes the "selling_places" edge to SellingPlace entities by IDs.
+func (_u *ItemUpdate) RemoveSellingPlaceIDs(ids ...string) *ItemUpdate {
+	_u.mutation.RemoveSellingPlaceIDs(ids...)
+	return _u
+}
+
+// RemoveSellingPlaces removes "selling_places" edges to SellingPlace entities.
+func (_u *ItemUpdate) RemoveSellingPlaces(v ...*SellingPlace) *ItemUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSellingPlaceIDs(ids...)
+}
+
+// ClearLabels clears all "labels" edges to the Label entity.
+func (_u *ItemUpdate) ClearLabels() *ItemUpdate {
+	_u.mutation.ClearLabels()
+	return _u
+}
+
+// RemoveLabelIDs removes the "labels" edge to Label entities by IDs.
+func (_u *ItemUpdate) RemoveLabelIDs(ids ...string) *ItemUpdate {
+	_u.mutation.RemoveLabelIDs(ids...)
+	return _u
+}
+
+// RemoveLabels removes "labels" edges to Label entities.
+func (_u *ItemUpdate) RemoveLabels(v ...*Label) *ItemUpdate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveLabelIDs(ids...)
+}
+
+// ClearSoldPlace clears the "sold_place" edge to the SellingPlace entity.
+func (_u *ItemUpdate) ClearSoldPlace() *ItemUpdate {
+	_u.mutation.ClearSoldPlace()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -370,6 +704,11 @@ func (_u *ItemUpdate) check() error {
 	if v, ok := _u.mutation.Status(); ok {
 		if err := item.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`generated: validator failed for field "Item.status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.MeasurementUnit(); ok {
+		if err := item.MeasurementUnitValidator(v); err != nil {
+			return &ValidationError{Name: "measurement_unit", err: fmt.Errorf(`generated: validator failed for field "Item.measurement_unit": %w`, err)}
 		}
 	}
 	if _u.mutation.OwnerCleared() && len(_u.mutation.OwnerIDs()) > 0 {
@@ -438,6 +777,12 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.AcquisitionCostCentsCleared() {
 		_spec.ClearField(item.FieldAcquisitionCostCents, field.TypeInt64)
 	}
+	if value, ok := _u.mutation.PurchasedAt(); ok {
+		_spec.SetField(item.FieldPurchasedAt, field.TypeTime, value)
+	}
+	if _u.mutation.PurchasedAtCleared() {
+		_spec.ClearField(item.FieldPurchasedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.ListingPriceCents(); ok {
 		_spec.SetField(item.FieldListingPriceCents, field.TypeInt64, value)
 	}
@@ -446,6 +791,72 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ListingPriceCentsCleared() {
 		_spec.ClearField(item.FieldListingPriceCents, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.Length(); ok {
+		_spec.SetField(item.FieldLength, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedLength(); ok {
+		_spec.AddField(item.FieldLength, field.TypeFloat64, value)
+	}
+	if _u.mutation.LengthCleared() {
+		_spec.ClearField(item.FieldLength, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Width(); ok {
+		_spec.SetField(item.FieldWidth, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWidth(); ok {
+		_spec.AddField(item.FieldWidth, field.TypeFloat64, value)
+	}
+	if _u.mutation.WidthCleared() {
+		_spec.ClearField(item.FieldWidth, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Height(); ok {
+		_spec.SetField(item.FieldHeight, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedHeight(); ok {
+		_spec.AddField(item.FieldHeight, field.TypeFloat64, value)
+	}
+	if _u.mutation.HeightCleared() {
+		_spec.ClearField(item.FieldHeight, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.MeasurementUnit(); ok {
+		_spec.SetField(item.FieldMeasurementUnit, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ExtraMeasurements(); ok {
+		_spec.SetField(item.FieldExtraMeasurements, field.TypeString, value)
+	}
+	if _u.mutation.ExtraMeasurementsCleared() {
+		_spec.ClearField(item.FieldExtraMeasurements, field.TypeString)
+	}
+	if value, ok := _u.mutation.WeightLbs(); ok {
+		_spec.SetField(item.FieldWeightLbs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeightLbs(); ok {
+		_spec.AddField(item.FieldWeightLbs, field.TypeInt, value)
+	}
+	if _u.mutation.WeightLbsCleared() {
+		_spec.ClearField(item.FieldWeightLbs, field.TypeInt)
+	}
+	if value, ok := _u.mutation.WeightOz(); ok {
+		_spec.SetField(item.FieldWeightOz, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWeightOz(); ok {
+		_spec.AddField(item.FieldWeightOz, field.TypeFloat64, value)
+	}
+	if _u.mutation.WeightOzCleared() {
+		_spec.ClearField(item.FieldWeightOz, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Notes(); ok {
+		_spec.SetField(item.FieldNotes, field.TypeString, value)
+	}
+	if _u.mutation.NotesCleared() {
+		_spec.ClearField(item.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.WhatnotNumber(); ok {
+		_spec.SetField(item.FieldWhatnotNumber, field.TypeString, value)
+	}
+	if _u.mutation.WhatnotNumberCleared() {
+		_spec.ClearField(item.FieldWhatnotNumber, field.TypeString)
 	}
 	if value, ok := _u.mutation.SoldPriceCents(); ok {
 		_spec.SetField(item.FieldSoldPriceCents, field.TypeInt64, value)
@@ -529,6 +940,125 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemimage.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SellingPlacesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.SellingPlacesTable,
+			Columns: item.SellingPlacesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSellingPlacesIDs(); len(nodes) > 0 && !_u.mutation.SellingPlacesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.SellingPlacesTable,
+			Columns: item.SellingPlacesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SellingPlacesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.SellingPlacesTable,
+			Columns: item.SellingPlacesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LabelsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.LabelsTable,
+			Columns: item.LabelsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(label.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedLabelsIDs(); len(nodes) > 0 && !_u.mutation.LabelsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.LabelsTable,
+			Columns: item.LabelsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(label.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LabelsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.LabelsTable,
+			Columns: item.LabelsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(label.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SoldPlaceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   item.SoldPlaceTable,
+			Columns: []string{item.SoldPlaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SoldPlaceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   item.SoldPlaceTable,
+			Columns: []string{item.SoldPlaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -718,6 +1248,26 @@ func (_u *ItemUpdateOne) ClearAcquisitionCostCents() *ItemUpdateOne {
 	return _u
 }
 
+// SetPurchasedAt sets the "purchased_at" field.
+func (_u *ItemUpdateOne) SetPurchasedAt(v time.Time) *ItemUpdateOne {
+	_u.mutation.SetPurchasedAt(v)
+	return _u
+}
+
+// SetNillablePurchasedAt sets the "purchased_at" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillablePurchasedAt(v *time.Time) *ItemUpdateOne {
+	if v != nil {
+		_u.SetPurchasedAt(*v)
+	}
+	return _u
+}
+
+// ClearPurchasedAt clears the value of the "purchased_at" field.
+func (_u *ItemUpdateOne) ClearPurchasedAt() *ItemUpdateOne {
+	_u.mutation.ClearPurchasedAt()
+	return _u
+}
+
 // SetListingPriceCents sets the "listing_price_cents" field.
 func (_u *ItemUpdateOne) SetListingPriceCents(v int64) *ItemUpdateOne {
 	_u.mutation.ResetListingPriceCents()
@@ -742,6 +1292,215 @@ func (_u *ItemUpdateOne) AddListingPriceCents(v int64) *ItemUpdateOne {
 // ClearListingPriceCents clears the value of the "listing_price_cents" field.
 func (_u *ItemUpdateOne) ClearListingPriceCents() *ItemUpdateOne {
 	_u.mutation.ClearListingPriceCents()
+	return _u
+}
+
+// SetLength sets the "length" field.
+func (_u *ItemUpdateOne) SetLength(v float64) *ItemUpdateOne {
+	_u.mutation.ResetLength()
+	_u.mutation.SetLength(v)
+	return _u
+}
+
+// SetNillableLength sets the "length" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableLength(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetLength(*v)
+	}
+	return _u
+}
+
+// AddLength adds value to the "length" field.
+func (_u *ItemUpdateOne) AddLength(v float64) *ItemUpdateOne {
+	_u.mutation.AddLength(v)
+	return _u
+}
+
+// ClearLength clears the value of the "length" field.
+func (_u *ItemUpdateOne) ClearLength() *ItemUpdateOne {
+	_u.mutation.ClearLength()
+	return _u
+}
+
+// SetWidth sets the "width" field.
+func (_u *ItemUpdateOne) SetWidth(v float64) *ItemUpdateOne {
+	_u.mutation.ResetWidth()
+	_u.mutation.SetWidth(v)
+	return _u
+}
+
+// SetNillableWidth sets the "width" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableWidth(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetWidth(*v)
+	}
+	return _u
+}
+
+// AddWidth adds value to the "width" field.
+func (_u *ItemUpdateOne) AddWidth(v float64) *ItemUpdateOne {
+	_u.mutation.AddWidth(v)
+	return _u
+}
+
+// ClearWidth clears the value of the "width" field.
+func (_u *ItemUpdateOne) ClearWidth() *ItemUpdateOne {
+	_u.mutation.ClearWidth()
+	return _u
+}
+
+// SetHeight sets the "height" field.
+func (_u *ItemUpdateOne) SetHeight(v float64) *ItemUpdateOne {
+	_u.mutation.ResetHeight()
+	_u.mutation.SetHeight(v)
+	return _u
+}
+
+// SetNillableHeight sets the "height" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableHeight(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetHeight(*v)
+	}
+	return _u
+}
+
+// AddHeight adds value to the "height" field.
+func (_u *ItemUpdateOne) AddHeight(v float64) *ItemUpdateOne {
+	_u.mutation.AddHeight(v)
+	return _u
+}
+
+// ClearHeight clears the value of the "height" field.
+func (_u *ItemUpdateOne) ClearHeight() *ItemUpdateOne {
+	_u.mutation.ClearHeight()
+	return _u
+}
+
+// SetMeasurementUnit sets the "measurement_unit" field.
+func (_u *ItemUpdateOne) SetMeasurementUnit(v item.MeasurementUnit) *ItemUpdateOne {
+	_u.mutation.SetMeasurementUnit(v)
+	return _u
+}
+
+// SetNillableMeasurementUnit sets the "measurement_unit" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableMeasurementUnit(v *item.MeasurementUnit) *ItemUpdateOne {
+	if v != nil {
+		_u.SetMeasurementUnit(*v)
+	}
+	return _u
+}
+
+// SetExtraMeasurements sets the "extra_measurements" field.
+func (_u *ItemUpdateOne) SetExtraMeasurements(v string) *ItemUpdateOne {
+	_u.mutation.SetExtraMeasurements(v)
+	return _u
+}
+
+// SetNillableExtraMeasurements sets the "extra_measurements" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableExtraMeasurements(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetExtraMeasurements(*v)
+	}
+	return _u
+}
+
+// ClearExtraMeasurements clears the value of the "extra_measurements" field.
+func (_u *ItemUpdateOne) ClearExtraMeasurements() *ItemUpdateOne {
+	_u.mutation.ClearExtraMeasurements()
+	return _u
+}
+
+// SetWeightLbs sets the "weight_lbs" field.
+func (_u *ItemUpdateOne) SetWeightLbs(v int) *ItemUpdateOne {
+	_u.mutation.ResetWeightLbs()
+	_u.mutation.SetWeightLbs(v)
+	return _u
+}
+
+// SetNillableWeightLbs sets the "weight_lbs" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableWeightLbs(v *int) *ItemUpdateOne {
+	if v != nil {
+		_u.SetWeightLbs(*v)
+	}
+	return _u
+}
+
+// AddWeightLbs adds value to the "weight_lbs" field.
+func (_u *ItemUpdateOne) AddWeightLbs(v int) *ItemUpdateOne {
+	_u.mutation.AddWeightLbs(v)
+	return _u
+}
+
+// ClearWeightLbs clears the value of the "weight_lbs" field.
+func (_u *ItemUpdateOne) ClearWeightLbs() *ItemUpdateOne {
+	_u.mutation.ClearWeightLbs()
+	return _u
+}
+
+// SetWeightOz sets the "weight_oz" field.
+func (_u *ItemUpdateOne) SetWeightOz(v float64) *ItemUpdateOne {
+	_u.mutation.ResetWeightOz()
+	_u.mutation.SetWeightOz(v)
+	return _u
+}
+
+// SetNillableWeightOz sets the "weight_oz" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableWeightOz(v *float64) *ItemUpdateOne {
+	if v != nil {
+		_u.SetWeightOz(*v)
+	}
+	return _u
+}
+
+// AddWeightOz adds value to the "weight_oz" field.
+func (_u *ItemUpdateOne) AddWeightOz(v float64) *ItemUpdateOne {
+	_u.mutation.AddWeightOz(v)
+	return _u
+}
+
+// ClearWeightOz clears the value of the "weight_oz" field.
+func (_u *ItemUpdateOne) ClearWeightOz() *ItemUpdateOne {
+	_u.mutation.ClearWeightOz()
+	return _u
+}
+
+// SetNotes sets the "notes" field.
+func (_u *ItemUpdateOne) SetNotes(v string) *ItemUpdateOne {
+	_u.mutation.SetNotes(v)
+	return _u
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableNotes(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetNotes(*v)
+	}
+	return _u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (_u *ItemUpdateOne) ClearNotes() *ItemUpdateOne {
+	_u.mutation.ClearNotes()
+	return _u
+}
+
+// SetWhatnotNumber sets the "whatnot_number" field.
+func (_u *ItemUpdateOne) SetWhatnotNumber(v string) *ItemUpdateOne {
+	_u.mutation.SetWhatnotNumber(v)
+	return _u
+}
+
+// SetNillableWhatnotNumber sets the "whatnot_number" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableWhatnotNumber(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetWhatnotNumber(*v)
+	}
+	return _u
+}
+
+// ClearWhatnotNumber clears the value of the "whatnot_number" field.
+func (_u *ItemUpdateOne) ClearWhatnotNumber() *ItemUpdateOne {
+	_u.mutation.ClearWhatnotNumber()
 	return _u
 }
 
@@ -792,6 +1551,26 @@ func (_u *ItemUpdateOne) ClearSoldAt() *ItemUpdateOne {
 	return _u
 }
 
+// SetSoldPlaceID sets the "sold_place_id" field.
+func (_u *ItemUpdateOne) SetSoldPlaceID(v string) *ItemUpdateOne {
+	_u.mutation.SetSoldPlaceID(v)
+	return _u
+}
+
+// SetNillableSoldPlaceID sets the "sold_place_id" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableSoldPlaceID(v *string) *ItemUpdateOne {
+	if v != nil {
+		_u.SetSoldPlaceID(*v)
+	}
+	return _u
+}
+
+// ClearSoldPlaceID clears the value of the "sold_place_id" field.
+func (_u *ItemUpdateOne) ClearSoldPlaceID() *ItemUpdateOne {
+	_u.mutation.ClearSoldPlaceID()
+	return _u
+}
+
 // SetOwnerID sets the "owner" edge to the User entity by ID.
 func (_u *ItemUpdateOne) SetOwnerID(id string) *ItemUpdateOne {
 	_u.mutation.SetOwnerID(id)
@@ -816,6 +1595,41 @@ func (_u *ItemUpdateOne) AddImages(v ...*ItemImage) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddImageIDs(ids...)
+}
+
+// AddSellingPlaceIDs adds the "selling_places" edge to the SellingPlace entity by IDs.
+func (_u *ItemUpdateOne) AddSellingPlaceIDs(ids ...string) *ItemUpdateOne {
+	_u.mutation.AddSellingPlaceIDs(ids...)
+	return _u
+}
+
+// AddSellingPlaces adds the "selling_places" edges to the SellingPlace entity.
+func (_u *ItemUpdateOne) AddSellingPlaces(v ...*SellingPlace) *ItemUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSellingPlaceIDs(ids...)
+}
+
+// AddLabelIDs adds the "labels" edge to the Label entity by IDs.
+func (_u *ItemUpdateOne) AddLabelIDs(ids ...string) *ItemUpdateOne {
+	_u.mutation.AddLabelIDs(ids...)
+	return _u
+}
+
+// AddLabels adds the "labels" edges to the Label entity.
+func (_u *ItemUpdateOne) AddLabels(v ...*Label) *ItemUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddLabelIDs(ids...)
+}
+
+// SetSoldPlace sets the "sold_place" edge to the SellingPlace entity.
+func (_u *ItemUpdateOne) SetSoldPlace(v *SellingPlace) *ItemUpdateOne {
+	return _u.SetSoldPlaceID(v.ID)
 }
 
 // Mutation returns the ItemMutation object of the builder.
@@ -848,6 +1662,54 @@ func (_u *ItemUpdateOne) RemoveImages(v ...*ItemImage) *ItemUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveImageIDs(ids...)
+}
+
+// ClearSellingPlaces clears all "selling_places" edges to the SellingPlace entity.
+func (_u *ItemUpdateOne) ClearSellingPlaces() *ItemUpdateOne {
+	_u.mutation.ClearSellingPlaces()
+	return _u
+}
+
+// RemoveSellingPlaceIDs removes the "selling_places" edge to SellingPlace entities by IDs.
+func (_u *ItemUpdateOne) RemoveSellingPlaceIDs(ids ...string) *ItemUpdateOne {
+	_u.mutation.RemoveSellingPlaceIDs(ids...)
+	return _u
+}
+
+// RemoveSellingPlaces removes "selling_places" edges to SellingPlace entities.
+func (_u *ItemUpdateOne) RemoveSellingPlaces(v ...*SellingPlace) *ItemUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSellingPlaceIDs(ids...)
+}
+
+// ClearLabels clears all "labels" edges to the Label entity.
+func (_u *ItemUpdateOne) ClearLabels() *ItemUpdateOne {
+	_u.mutation.ClearLabels()
+	return _u
+}
+
+// RemoveLabelIDs removes the "labels" edge to Label entities by IDs.
+func (_u *ItemUpdateOne) RemoveLabelIDs(ids ...string) *ItemUpdateOne {
+	_u.mutation.RemoveLabelIDs(ids...)
+	return _u
+}
+
+// RemoveLabels removes "labels" edges to Label entities.
+func (_u *ItemUpdateOne) RemoveLabels(v ...*Label) *ItemUpdateOne {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveLabelIDs(ids...)
+}
+
+// ClearSoldPlace clears the "sold_place" edge to the SellingPlace entity.
+func (_u *ItemUpdateOne) ClearSoldPlace() *ItemUpdateOne {
+	_u.mutation.ClearSoldPlace()
+	return _u
 }
 
 // Where appends a list predicates to the ItemUpdate builder.
@@ -909,6 +1771,11 @@ func (_u *ItemUpdateOne) check() error {
 	if v, ok := _u.mutation.Status(); ok {
 		if err := item.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`generated: validator failed for field "Item.status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.MeasurementUnit(); ok {
+		if err := item.MeasurementUnitValidator(v); err != nil {
+			return &ValidationError{Name: "measurement_unit", err: fmt.Errorf(`generated: validator failed for field "Item.measurement_unit": %w`, err)}
 		}
 	}
 	if _u.mutation.OwnerCleared() && len(_u.mutation.OwnerIDs()) > 0 {
@@ -994,6 +1861,12 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	if _u.mutation.AcquisitionCostCentsCleared() {
 		_spec.ClearField(item.FieldAcquisitionCostCents, field.TypeInt64)
 	}
+	if value, ok := _u.mutation.PurchasedAt(); ok {
+		_spec.SetField(item.FieldPurchasedAt, field.TypeTime, value)
+	}
+	if _u.mutation.PurchasedAtCleared() {
+		_spec.ClearField(item.FieldPurchasedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.ListingPriceCents(); ok {
 		_spec.SetField(item.FieldListingPriceCents, field.TypeInt64, value)
 	}
@@ -1002,6 +1875,72 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if _u.mutation.ListingPriceCentsCleared() {
 		_spec.ClearField(item.FieldListingPriceCents, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.Length(); ok {
+		_spec.SetField(item.FieldLength, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedLength(); ok {
+		_spec.AddField(item.FieldLength, field.TypeFloat64, value)
+	}
+	if _u.mutation.LengthCleared() {
+		_spec.ClearField(item.FieldLength, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Width(); ok {
+		_spec.SetField(item.FieldWidth, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWidth(); ok {
+		_spec.AddField(item.FieldWidth, field.TypeFloat64, value)
+	}
+	if _u.mutation.WidthCleared() {
+		_spec.ClearField(item.FieldWidth, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Height(); ok {
+		_spec.SetField(item.FieldHeight, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedHeight(); ok {
+		_spec.AddField(item.FieldHeight, field.TypeFloat64, value)
+	}
+	if _u.mutation.HeightCleared() {
+		_spec.ClearField(item.FieldHeight, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.MeasurementUnit(); ok {
+		_spec.SetField(item.FieldMeasurementUnit, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ExtraMeasurements(); ok {
+		_spec.SetField(item.FieldExtraMeasurements, field.TypeString, value)
+	}
+	if _u.mutation.ExtraMeasurementsCleared() {
+		_spec.ClearField(item.FieldExtraMeasurements, field.TypeString)
+	}
+	if value, ok := _u.mutation.WeightLbs(); ok {
+		_spec.SetField(item.FieldWeightLbs, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeightLbs(); ok {
+		_spec.AddField(item.FieldWeightLbs, field.TypeInt, value)
+	}
+	if _u.mutation.WeightLbsCleared() {
+		_spec.ClearField(item.FieldWeightLbs, field.TypeInt)
+	}
+	if value, ok := _u.mutation.WeightOz(); ok {
+		_spec.SetField(item.FieldWeightOz, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedWeightOz(); ok {
+		_spec.AddField(item.FieldWeightOz, field.TypeFloat64, value)
+	}
+	if _u.mutation.WeightOzCleared() {
+		_spec.ClearField(item.FieldWeightOz, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Notes(); ok {
+		_spec.SetField(item.FieldNotes, field.TypeString, value)
+	}
+	if _u.mutation.NotesCleared() {
+		_spec.ClearField(item.FieldNotes, field.TypeString)
+	}
+	if value, ok := _u.mutation.WhatnotNumber(); ok {
+		_spec.SetField(item.FieldWhatnotNumber, field.TypeString, value)
+	}
+	if _u.mutation.WhatnotNumberCleared() {
+		_spec.ClearField(item.FieldWhatnotNumber, field.TypeString)
 	}
 	if value, ok := _u.mutation.SoldPriceCents(); ok {
 		_spec.SetField(item.FieldSoldPriceCents, field.TypeInt64, value)
@@ -1085,6 +2024,125 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(itemimage.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SellingPlacesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.SellingPlacesTable,
+			Columns: item.SellingPlacesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSellingPlacesIDs(); len(nodes) > 0 && !_u.mutation.SellingPlacesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.SellingPlacesTable,
+			Columns: item.SellingPlacesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SellingPlacesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.SellingPlacesTable,
+			Columns: item.SellingPlacesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LabelsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.LabelsTable,
+			Columns: item.LabelsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(label.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedLabelsIDs(); len(nodes) > 0 && !_u.mutation.LabelsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.LabelsTable,
+			Columns: item.LabelsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(label.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LabelsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.LabelsTable,
+			Columns: item.LabelsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(label.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SoldPlaceCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   item.SoldPlaceTable,
+			Columns: []string{item.SoldPlaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SoldPlaceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   item.SoldPlaceTable,
+			Columns: []string{item.SoldPlaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

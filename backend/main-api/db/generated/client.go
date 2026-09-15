@@ -13,6 +13,8 @@ import (
 
 	"main-api/db/generated/item"
 	"main-api/db/generated/itemimage"
+	"main-api/db/generated/label"
+	"main-api/db/generated/sellingplace"
 	"main-api/db/generated/user"
 
 	"entgo.io/ent"
@@ -30,6 +32,10 @@ type Client struct {
 	Item *ItemClient
 	// ItemImage is the client for interacting with the ItemImage builders.
 	ItemImage *ItemImageClient
+	// Label is the client for interacting with the Label builders.
+	Label *LabelClient
+	// SellingPlace is the client for interacting with the SellingPlace builders.
+	SellingPlace *SellingPlaceClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -45,6 +51,8 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Item = NewItemClient(c.config)
 	c.ItemImage = NewItemImageClient(c.config)
+	c.Label = NewLabelClient(c.config)
+	c.SellingPlace = NewSellingPlaceClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -136,11 +144,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		Item:      NewItemClient(cfg),
-		ItemImage: NewItemImageClient(cfg),
-		User:      NewUserClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		Item:         NewItemClient(cfg),
+		ItemImage:    NewItemImageClient(cfg),
+		Label:        NewLabelClient(cfg),
+		SellingPlace: NewSellingPlaceClient(cfg),
+		User:         NewUserClient(cfg),
 	}, nil
 }
 
@@ -158,11 +168,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		Item:      NewItemClient(cfg),
-		ItemImage: NewItemImageClient(cfg),
-		User:      NewUserClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		Item:         NewItemClient(cfg),
+		ItemImage:    NewItemImageClient(cfg),
+		Label:        NewLabelClient(cfg),
+		SellingPlace: NewSellingPlaceClient(cfg),
+		User:         NewUserClient(cfg),
 	}, nil
 }
 
@@ -193,6 +205,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	c.Item.Use(hooks...)
 	c.ItemImage.Use(hooks...)
+	c.Label.Use(hooks...)
+	c.SellingPlace.Use(hooks...)
 	c.User.Use(hooks...)
 }
 
@@ -201,6 +215,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Item.Intercept(interceptors...)
 	c.ItemImage.Intercept(interceptors...)
+	c.Label.Intercept(interceptors...)
+	c.SellingPlace.Intercept(interceptors...)
 	c.User.Intercept(interceptors...)
 }
 
@@ -211,6 +227,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Item.mutate(ctx, m)
 	case *ItemImageMutation:
 		return c.ItemImage.mutate(ctx, m)
+	case *LabelMutation:
+		return c.Label.mutate(ctx, m)
+	case *SellingPlaceMutation:
+		return c.SellingPlace.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	default:
@@ -351,6 +371,54 @@ func (c *ItemClient) QueryImages(_m *Item) *ItemImageQuery {
 			sqlgraph.From(item.Table, item.FieldID, id),
 			sqlgraph.To(itemimage.Table, itemimage.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, item.ImagesTable, item.ImagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySellingPlaces queries the selling_places edge of a Item.
+func (c *ItemClient) QuerySellingPlaces(_m *Item) *SellingPlaceQuery {
+	query := (&SellingPlaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(sellingplace.Table, sellingplace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, item.SellingPlacesTable, item.SellingPlacesPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLabels queries the labels edge of a Item.
+func (c *ItemClient) QueryLabels(_m *Item) *LabelQuery {
+	query := (&LabelClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(label.Table, label.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, item.LabelsTable, item.LabelsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySoldPlace queries the sold_place edge of a Item.
+func (c *ItemClient) QuerySoldPlace(_m *Item) *SellingPlaceQuery {
+	query := (&SellingPlaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(item.Table, item.FieldID, id),
+			sqlgraph.To(sellingplace.Table, sellingplace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, item.SoldPlaceTable, item.SoldPlaceColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -532,6 +600,304 @@ func (c *ItemImageClient) mutate(ctx context.Context, m *ItemImageMutation) (Val
 	}
 }
 
+// LabelClient is a client for the Label schema.
+type LabelClient struct {
+	config
+}
+
+// NewLabelClient returns a client for the Label from the given config.
+func NewLabelClient(c config) *LabelClient {
+	return &LabelClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `label.Hooks(f(g(h())))`.
+func (c *LabelClient) Use(hooks ...Hook) {
+	c.hooks.Label = append(c.hooks.Label, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `label.Intercept(f(g(h())))`.
+func (c *LabelClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Label = append(c.inters.Label, interceptors...)
+}
+
+// Create returns a builder for creating a Label entity.
+func (c *LabelClient) Create() *LabelCreate {
+	mutation := newLabelMutation(c.config, OpCreate)
+	return &LabelCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Label entities.
+func (c *LabelClient) CreateBulk(builders ...*LabelCreate) *LabelCreateBulk {
+	return &LabelCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *LabelClient) MapCreateBulk(slice any, setFunc func(*LabelCreate, int)) *LabelCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &LabelCreateBulk{err: fmt.Errorf("calling to LabelClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*LabelCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &LabelCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Label.
+func (c *LabelClient) Update() *LabelUpdate {
+	mutation := newLabelMutation(c.config, OpUpdate)
+	return &LabelUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LabelClient) UpdateOne(_m *Label) *LabelUpdateOne {
+	mutation := newLabelMutation(c.config, OpUpdateOne, withLabel(_m))
+	return &LabelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LabelClient) UpdateOneID(id string) *LabelUpdateOne {
+	mutation := newLabelMutation(c.config, OpUpdateOne, withLabelID(id))
+	return &LabelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Label.
+func (c *LabelClient) Delete() *LabelDelete {
+	mutation := newLabelMutation(c.config, OpDelete)
+	return &LabelDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *LabelClient) DeleteOne(_m *Label) *LabelDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *LabelClient) DeleteOneID(id string) *LabelDeleteOne {
+	builder := c.Delete().Where(label.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LabelDeleteOne{builder}
+}
+
+// Query returns a query builder for Label.
+func (c *LabelClient) Query() *LabelQuery {
+	return &LabelQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeLabel},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Label entity by its id.
+func (c *LabelClient) Get(ctx context.Context, id string) (*Label, error) {
+	return c.Query().Where(label.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LabelClient) GetX(ctx context.Context, id string) *Label {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItems queries the items edge of a Label.
+func (c *LabelClient) QueryItems(_m *Label) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(label.Table, label.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, label.ItemsTable, label.ItemsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *LabelClient) Hooks() []Hook {
+	return c.hooks.Label
+}
+
+// Interceptors returns the client interceptors.
+func (c *LabelClient) Interceptors() []Interceptor {
+	return c.inters.Label
+}
+
+func (c *LabelClient) mutate(ctx context.Context, m *LabelMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&LabelCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&LabelUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&LabelUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&LabelDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("generated: unknown Label mutation op: %q", m.Op())
+	}
+}
+
+// SellingPlaceClient is a client for the SellingPlace schema.
+type SellingPlaceClient struct {
+	config
+}
+
+// NewSellingPlaceClient returns a client for the SellingPlace from the given config.
+func NewSellingPlaceClient(c config) *SellingPlaceClient {
+	return &SellingPlaceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sellingplace.Hooks(f(g(h())))`.
+func (c *SellingPlaceClient) Use(hooks ...Hook) {
+	c.hooks.SellingPlace = append(c.hooks.SellingPlace, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sellingplace.Intercept(f(g(h())))`.
+func (c *SellingPlaceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SellingPlace = append(c.inters.SellingPlace, interceptors...)
+}
+
+// Create returns a builder for creating a SellingPlace entity.
+func (c *SellingPlaceClient) Create() *SellingPlaceCreate {
+	mutation := newSellingPlaceMutation(c.config, OpCreate)
+	return &SellingPlaceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SellingPlace entities.
+func (c *SellingPlaceClient) CreateBulk(builders ...*SellingPlaceCreate) *SellingPlaceCreateBulk {
+	return &SellingPlaceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SellingPlaceClient) MapCreateBulk(slice any, setFunc func(*SellingPlaceCreate, int)) *SellingPlaceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SellingPlaceCreateBulk{err: fmt.Errorf("calling to SellingPlaceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SellingPlaceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SellingPlaceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SellingPlace.
+func (c *SellingPlaceClient) Update() *SellingPlaceUpdate {
+	mutation := newSellingPlaceMutation(c.config, OpUpdate)
+	return &SellingPlaceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SellingPlaceClient) UpdateOne(_m *SellingPlace) *SellingPlaceUpdateOne {
+	mutation := newSellingPlaceMutation(c.config, OpUpdateOne, withSellingPlace(_m))
+	return &SellingPlaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SellingPlaceClient) UpdateOneID(id string) *SellingPlaceUpdateOne {
+	mutation := newSellingPlaceMutation(c.config, OpUpdateOne, withSellingPlaceID(id))
+	return &SellingPlaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SellingPlace.
+func (c *SellingPlaceClient) Delete() *SellingPlaceDelete {
+	mutation := newSellingPlaceMutation(c.config, OpDelete)
+	return &SellingPlaceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SellingPlaceClient) DeleteOne(_m *SellingPlace) *SellingPlaceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SellingPlaceClient) DeleteOneID(id string) *SellingPlaceDeleteOne {
+	builder := c.Delete().Where(sellingplace.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SellingPlaceDeleteOne{builder}
+}
+
+// Query returns a query builder for SellingPlace.
+func (c *SellingPlaceClient) Query() *SellingPlaceQuery {
+	return &SellingPlaceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSellingPlace},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SellingPlace entity by its id.
+func (c *SellingPlaceClient) Get(ctx context.Context, id string) (*SellingPlace, error) {
+	return c.Query().Where(sellingplace.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SellingPlaceClient) GetX(ctx context.Context, id string) *SellingPlace {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItems queries the items edge of a SellingPlace.
+func (c *SellingPlaceClient) QueryItems(_m *SellingPlace) *ItemQuery {
+	query := (&ItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sellingplace.Table, sellingplace.FieldID, id),
+			sqlgraph.To(item.Table, item.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, sellingplace.ItemsTable, sellingplace.ItemsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SellingPlaceClient) Hooks() []Hook {
+	return c.hooks.SellingPlace
+}
+
+// Interceptors returns the client interceptors.
+func (c *SellingPlaceClient) Interceptors() []Interceptor {
+	return c.inters.SellingPlace
+}
+
+func (c *SellingPlaceClient) mutate(ctx context.Context, m *SellingPlaceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SellingPlaceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SellingPlaceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SellingPlaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SellingPlaceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("generated: unknown SellingPlace mutation op: %q", m.Op())
+	}
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -684,9 +1050,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Item, ItemImage, User []ent.Hook
+		Item, ItemImage, Label, SellingPlace, User []ent.Hook
 	}
 	inters struct {
-		Item, ItemImage, User []ent.Interceptor
+		Item, ItemImage, Label, SellingPlace, User []ent.Interceptor
 	}
 )

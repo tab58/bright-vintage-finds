@@ -32,6 +32,30 @@ func (f ItemImageFunc) Mutate(ctx context.Context, m generated.Mutation) (genera
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *generated.ItemImageMutation", m)
 }
 
+// The LabelFunc type is an adapter to allow the use of ordinary
+// function as Label mutator.
+type LabelFunc func(context.Context, *generated.LabelMutation) (generated.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f LabelFunc) Mutate(ctx context.Context, m generated.Mutation) (generated.Value, error) {
+	if mv, ok := m.(*generated.LabelMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *generated.LabelMutation", m)
+}
+
+// The SellingPlaceFunc type is an adapter to allow the use of ordinary
+// function as SellingPlace mutator.
+type SellingPlaceFunc func(context.Context, *generated.SellingPlaceMutation) (generated.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SellingPlaceFunc) Mutate(ctx context.Context, m generated.Mutation) (generated.Value, error) {
+	if mv, ok := m.(*generated.SellingPlaceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *generated.SellingPlaceMutation", m)
+}
+
 // The UserFunc type is an adapter to allow the use of ordinary
 // function as User mutator.
 type UserFunc func(context.Context, *generated.UserMutation) (generated.Value, error)

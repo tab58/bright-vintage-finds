@@ -29,6 +29,8 @@ db/
 erDiagram
     USER ||--o{ ITEM : "owns"
     ITEM ||--o{ ITEM_IMAGE : "has"
+    ITEM }--o{ SELLING_PLACE : "listed on"
+    ITEM }--o{ LABEL : "tagged"
 
     USER {
         string idp_id UK "immutable"
@@ -44,10 +46,29 @@ erDiagram
         string condition              "nullable"
         enum   status                 "draft|listed|sold|archived"
         int64  acquisition_cost_cents "nullable"
+        timestamp purchased_at        "nullable"
         int64  listing_price_cents    "nullable"
+        float  length                 "nullable"
+        float  width                  "nullable"
+        float  height                 "nullable"
+        enum   measurement_unit       "in|cm, default in"
+        string extra_measurements     "nullable"
+        int    weight_lbs             "nullable"
+        float  weight_oz              "nullable"
+        string notes                 "nullable"
+        string whatnot_number        "UK when non-null, nullable"
         int64  sold_price_cents       "nullable"
         timestamp sold_at             "nullable"
         string user_items FK          "owner"
+    }
+
+    SELLING_PLACE {
+        string name UK
+        bool   is_builtin "default false"
+    }
+
+    LABEL {
+        string name UK
     }
 
     ITEM_IMAGE {

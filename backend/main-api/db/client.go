@@ -17,6 +17,9 @@ type ClientConfig struct {
 
 type Client struct {
 	db *generated.Client
+	// raw is the underlying pool; exposed for harness use (test truncation,
+	// liveness checks), not for feature queries.
+	raw *sql.DB
 }
 
 func NewClient(config ClientConfig) (*Client, error) {
@@ -28,7 +31,8 @@ func NewClient(config ClientConfig) (*Client, error) {
 	client := generated.NewClient(generated.Driver(drv))
 
 	return &Client{
-		db: client,
+		db:  client,
+		raw: dbConn,
 	}, nil
 }
 
@@ -40,4 +44,9 @@ func NewClientFromDB(client *generated.Client) *Client {
 
 func (repo *Client) GetDBFromContext(ctx context.Context) *generated.Client {
 	return repo.db
+}
+
+// Raw exposes the underlying database/sql pool.
+func (repo *Client) Raw() *sql.DB {
+	return repo.raw
 }

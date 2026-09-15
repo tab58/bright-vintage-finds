@@ -1,8 +1,24 @@
 import * as stylex from '@stylexjs/stylex'
+import { Routes, Route } from 'react-router-dom'
 import textureBand from './assets/texture-band.png'
 import poster from './assets/card-bright.png'
+import InventoryPage from './pages/Inventory'
+import IntakePage from './pages/Intake'
+import ItemPage from './pages/Item'
 
 export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Splash />} />
+      <Route path="/inventory" element={<InventoryPage />} />
+      <Route path="/inventory/new" element={<IntakePage />} />
+      <Route path="/inventory/item/:id" element={<ItemPage />} />
+    </Routes>
+  )
+}
+
+// Splash is the public_site landing page, kept hardcoded as before.
+function Splash() {
   return (
     <div {...stylex.props(styles.page)}>
       <div

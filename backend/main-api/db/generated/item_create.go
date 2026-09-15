@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"main-api/db/generated/item"
 	"main-api/db/generated/itemimage"
+	"main-api/db/generated/label"
+	"main-api/db/generated/sellingplace"
 	"main-api/db/generated/user"
 	"time"
 
@@ -157,6 +159,20 @@ func (_c *ItemCreate) SetNillableAcquisitionCostCents(v *int64) *ItemCreate {
 	return _c
 }
 
+// SetPurchasedAt sets the "purchased_at" field.
+func (_c *ItemCreate) SetPurchasedAt(v time.Time) *ItemCreate {
+	_c.mutation.SetPurchasedAt(v)
+	return _c
+}
+
+// SetNillablePurchasedAt sets the "purchased_at" field if the given value is not nil.
+func (_c *ItemCreate) SetNillablePurchasedAt(v *time.Time) *ItemCreate {
+	if v != nil {
+		_c.SetPurchasedAt(*v)
+	}
+	return _c
+}
+
 // SetListingPriceCents sets the "listing_price_cents" field.
 func (_c *ItemCreate) SetListingPriceCents(v int64) *ItemCreate {
 	_c.mutation.SetListingPriceCents(v)
@@ -167,6 +183,132 @@ func (_c *ItemCreate) SetListingPriceCents(v int64) *ItemCreate {
 func (_c *ItemCreate) SetNillableListingPriceCents(v *int64) *ItemCreate {
 	if v != nil {
 		_c.SetListingPriceCents(*v)
+	}
+	return _c
+}
+
+// SetLength sets the "length" field.
+func (_c *ItemCreate) SetLength(v float64) *ItemCreate {
+	_c.mutation.SetLength(v)
+	return _c
+}
+
+// SetNillableLength sets the "length" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableLength(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetLength(*v)
+	}
+	return _c
+}
+
+// SetWidth sets the "width" field.
+func (_c *ItemCreate) SetWidth(v float64) *ItemCreate {
+	_c.mutation.SetWidth(v)
+	return _c
+}
+
+// SetNillableWidth sets the "width" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableWidth(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetWidth(*v)
+	}
+	return _c
+}
+
+// SetHeight sets the "height" field.
+func (_c *ItemCreate) SetHeight(v float64) *ItemCreate {
+	_c.mutation.SetHeight(v)
+	return _c
+}
+
+// SetNillableHeight sets the "height" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableHeight(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetHeight(*v)
+	}
+	return _c
+}
+
+// SetMeasurementUnit sets the "measurement_unit" field.
+func (_c *ItemCreate) SetMeasurementUnit(v item.MeasurementUnit) *ItemCreate {
+	_c.mutation.SetMeasurementUnit(v)
+	return _c
+}
+
+// SetNillableMeasurementUnit sets the "measurement_unit" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableMeasurementUnit(v *item.MeasurementUnit) *ItemCreate {
+	if v != nil {
+		_c.SetMeasurementUnit(*v)
+	}
+	return _c
+}
+
+// SetExtraMeasurements sets the "extra_measurements" field.
+func (_c *ItemCreate) SetExtraMeasurements(v string) *ItemCreate {
+	_c.mutation.SetExtraMeasurements(v)
+	return _c
+}
+
+// SetNillableExtraMeasurements sets the "extra_measurements" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableExtraMeasurements(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetExtraMeasurements(*v)
+	}
+	return _c
+}
+
+// SetWeightLbs sets the "weight_lbs" field.
+func (_c *ItemCreate) SetWeightLbs(v int) *ItemCreate {
+	_c.mutation.SetWeightLbs(v)
+	return _c
+}
+
+// SetNillableWeightLbs sets the "weight_lbs" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableWeightLbs(v *int) *ItemCreate {
+	if v != nil {
+		_c.SetWeightLbs(*v)
+	}
+	return _c
+}
+
+// SetWeightOz sets the "weight_oz" field.
+func (_c *ItemCreate) SetWeightOz(v float64) *ItemCreate {
+	_c.mutation.SetWeightOz(v)
+	return _c
+}
+
+// SetNillableWeightOz sets the "weight_oz" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableWeightOz(v *float64) *ItemCreate {
+	if v != nil {
+		_c.SetWeightOz(*v)
+	}
+	return _c
+}
+
+// SetNotes sets the "notes" field.
+func (_c *ItemCreate) SetNotes(v string) *ItemCreate {
+	_c.mutation.SetNotes(v)
+	return _c
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableNotes(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetNotes(*v)
+	}
+	return _c
+}
+
+// SetWhatnotNumber sets the "whatnot_number" field.
+func (_c *ItemCreate) SetWhatnotNumber(v string) *ItemCreate {
+	_c.mutation.SetWhatnotNumber(v)
+	return _c
+}
+
+// SetNillableWhatnotNumber sets the "whatnot_number" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableWhatnotNumber(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetWhatnotNumber(*v)
 	}
 	return _c
 }
@@ -195,6 +337,20 @@ func (_c *ItemCreate) SetSoldAt(v time.Time) *ItemCreate {
 func (_c *ItemCreate) SetNillableSoldAt(v *time.Time) *ItemCreate {
 	if v != nil {
 		_c.SetSoldAt(*v)
+	}
+	return _c
+}
+
+// SetSoldPlaceID sets the "sold_place_id" field.
+func (_c *ItemCreate) SetSoldPlaceID(v string) *ItemCreate {
+	_c.mutation.SetSoldPlaceID(v)
+	return _c
+}
+
+// SetNillableSoldPlaceID sets the "sold_place_id" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableSoldPlaceID(v *string) *ItemCreate {
+	if v != nil {
+		_c.SetSoldPlaceID(*v)
 	}
 	return _c
 }
@@ -237,6 +393,41 @@ func (_c *ItemCreate) AddImages(v ...*ItemImage) *ItemCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddImageIDs(ids...)
+}
+
+// AddSellingPlaceIDs adds the "selling_places" edge to the SellingPlace entity by IDs.
+func (_c *ItemCreate) AddSellingPlaceIDs(ids ...string) *ItemCreate {
+	_c.mutation.AddSellingPlaceIDs(ids...)
+	return _c
+}
+
+// AddSellingPlaces adds the "selling_places" edges to the SellingPlace entity.
+func (_c *ItemCreate) AddSellingPlaces(v ...*SellingPlace) *ItemCreate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSellingPlaceIDs(ids...)
+}
+
+// AddLabelIDs adds the "labels" edge to the Label entity by IDs.
+func (_c *ItemCreate) AddLabelIDs(ids ...string) *ItemCreate {
+	_c.mutation.AddLabelIDs(ids...)
+	return _c
+}
+
+// AddLabels adds the "labels" edges to the Label entity.
+func (_c *ItemCreate) AddLabels(v ...*Label) *ItemCreate {
+	ids := make([]string, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddLabelIDs(ids...)
+}
+
+// SetSoldPlace sets the "sold_place" edge to the SellingPlace entity.
+func (_c *ItemCreate) SetSoldPlace(v *SellingPlace) *ItemCreate {
+	return _c.SetSoldPlaceID(v.ID)
 }
 
 // Mutation returns the ItemMutation object of the builder.
@@ -290,6 +481,10 @@ func (_c *ItemCreate) defaults() {
 		v := item.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.MeasurementUnit(); !ok {
+		v := item.DefaultMeasurementUnit
+		_c.mutation.SetMeasurementUnit(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := item.DefaultID()
 		_c.mutation.SetID(v)
@@ -321,6 +516,14 @@ func (_c *ItemCreate) check() error {
 	if v, ok := _c.mutation.Status(); ok {
 		if err := item.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`generated: validator failed for field "Item.status": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.MeasurementUnit(); !ok {
+		return &ValidationError{Name: "measurement_unit", err: errors.New(`generated: missing required field "Item.measurement_unit"`)}
+	}
+	if v, ok := _c.mutation.MeasurementUnit(); ok {
+		if err := item.MeasurementUnitValidator(v); err != nil {
+			return &ValidationError{Name: "measurement_unit", err: fmt.Errorf(`generated: validator failed for field "Item.measurement_unit": %w`, err)}
 		}
 	}
 	if len(_c.mutation.OwnerIDs()) == 0 {
@@ -402,9 +605,49 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldAcquisitionCostCents, field.TypeInt64, value)
 		_node.AcquisitionCostCents = &value
 	}
+	if value, ok := _c.mutation.PurchasedAt(); ok {
+		_spec.SetField(item.FieldPurchasedAt, field.TypeTime, value)
+		_node.PurchasedAt = &value
+	}
 	if value, ok := _c.mutation.ListingPriceCents(); ok {
 		_spec.SetField(item.FieldListingPriceCents, field.TypeInt64, value)
 		_node.ListingPriceCents = &value
+	}
+	if value, ok := _c.mutation.Length(); ok {
+		_spec.SetField(item.FieldLength, field.TypeFloat64, value)
+		_node.Length = &value
+	}
+	if value, ok := _c.mutation.Width(); ok {
+		_spec.SetField(item.FieldWidth, field.TypeFloat64, value)
+		_node.Width = &value
+	}
+	if value, ok := _c.mutation.Height(); ok {
+		_spec.SetField(item.FieldHeight, field.TypeFloat64, value)
+		_node.Height = &value
+	}
+	if value, ok := _c.mutation.MeasurementUnit(); ok {
+		_spec.SetField(item.FieldMeasurementUnit, field.TypeEnum, value)
+		_node.MeasurementUnit = value
+	}
+	if value, ok := _c.mutation.ExtraMeasurements(); ok {
+		_spec.SetField(item.FieldExtraMeasurements, field.TypeString, value)
+		_node.ExtraMeasurements = &value
+	}
+	if value, ok := _c.mutation.WeightLbs(); ok {
+		_spec.SetField(item.FieldWeightLbs, field.TypeInt, value)
+		_node.WeightLbs = &value
+	}
+	if value, ok := _c.mutation.WeightOz(); ok {
+		_spec.SetField(item.FieldWeightOz, field.TypeFloat64, value)
+		_node.WeightOz = &value
+	}
+	if value, ok := _c.mutation.Notes(); ok {
+		_spec.SetField(item.FieldNotes, field.TypeString, value)
+		_node.Notes = &value
+	}
+	if value, ok := _c.mutation.WhatnotNumber(); ok {
+		_spec.SetField(item.FieldWhatnotNumber, field.TypeString, value)
+		_node.WhatnotNumber = &value
 	}
 	if value, ok := _c.mutation.SoldPriceCents(); ok {
 		_spec.SetField(item.FieldSoldPriceCents, field.TypeInt64, value)
@@ -445,6 +688,55 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SellingPlacesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.SellingPlacesTable,
+			Columns: item.SellingPlacesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.LabelsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   item.LabelsTable,
+			Columns: item.LabelsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(label.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SoldPlaceIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   item.SoldPlaceTable,
+			Columns: []string{item.SoldPlaceColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sellingplace.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.SoldPlaceID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -649,6 +941,24 @@ func (u *ItemUpsert) ClearAcquisitionCostCents() *ItemUpsert {
 	return u
 }
 
+// SetPurchasedAt sets the "purchased_at" field.
+func (u *ItemUpsert) SetPurchasedAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldPurchasedAt, v)
+	return u
+}
+
+// UpdatePurchasedAt sets the "purchased_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdatePurchasedAt() *ItemUpsert {
+	u.SetExcluded(item.FieldPurchasedAt)
+	return u
+}
+
+// ClearPurchasedAt clears the value of the "purchased_at" field.
+func (u *ItemUpsert) ClearPurchasedAt() *ItemUpsert {
+	u.SetNull(item.FieldPurchasedAt)
+	return u
+}
+
 // SetListingPriceCents sets the "listing_price_cents" field.
 func (u *ItemUpsert) SetListingPriceCents(v int64) *ItemUpsert {
 	u.Set(item.FieldListingPriceCents, v)
@@ -670,6 +980,192 @@ func (u *ItemUpsert) AddListingPriceCents(v int64) *ItemUpsert {
 // ClearListingPriceCents clears the value of the "listing_price_cents" field.
 func (u *ItemUpsert) ClearListingPriceCents() *ItemUpsert {
 	u.SetNull(item.FieldListingPriceCents)
+	return u
+}
+
+// SetLength sets the "length" field.
+func (u *ItemUpsert) SetLength(v float64) *ItemUpsert {
+	u.Set(item.FieldLength, v)
+	return u
+}
+
+// UpdateLength sets the "length" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateLength() *ItemUpsert {
+	u.SetExcluded(item.FieldLength)
+	return u
+}
+
+// AddLength adds v to the "length" field.
+func (u *ItemUpsert) AddLength(v float64) *ItemUpsert {
+	u.Add(item.FieldLength, v)
+	return u
+}
+
+// ClearLength clears the value of the "length" field.
+func (u *ItemUpsert) ClearLength() *ItemUpsert {
+	u.SetNull(item.FieldLength)
+	return u
+}
+
+// SetWidth sets the "width" field.
+func (u *ItemUpsert) SetWidth(v float64) *ItemUpsert {
+	u.Set(item.FieldWidth, v)
+	return u
+}
+
+// UpdateWidth sets the "width" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateWidth() *ItemUpsert {
+	u.SetExcluded(item.FieldWidth)
+	return u
+}
+
+// AddWidth adds v to the "width" field.
+func (u *ItemUpsert) AddWidth(v float64) *ItemUpsert {
+	u.Add(item.FieldWidth, v)
+	return u
+}
+
+// ClearWidth clears the value of the "width" field.
+func (u *ItemUpsert) ClearWidth() *ItemUpsert {
+	u.SetNull(item.FieldWidth)
+	return u
+}
+
+// SetHeight sets the "height" field.
+func (u *ItemUpsert) SetHeight(v float64) *ItemUpsert {
+	u.Set(item.FieldHeight, v)
+	return u
+}
+
+// UpdateHeight sets the "height" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateHeight() *ItemUpsert {
+	u.SetExcluded(item.FieldHeight)
+	return u
+}
+
+// AddHeight adds v to the "height" field.
+func (u *ItemUpsert) AddHeight(v float64) *ItemUpsert {
+	u.Add(item.FieldHeight, v)
+	return u
+}
+
+// ClearHeight clears the value of the "height" field.
+func (u *ItemUpsert) ClearHeight() *ItemUpsert {
+	u.SetNull(item.FieldHeight)
+	return u
+}
+
+// SetMeasurementUnit sets the "measurement_unit" field.
+func (u *ItemUpsert) SetMeasurementUnit(v item.MeasurementUnit) *ItemUpsert {
+	u.Set(item.FieldMeasurementUnit, v)
+	return u
+}
+
+// UpdateMeasurementUnit sets the "measurement_unit" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateMeasurementUnit() *ItemUpsert {
+	u.SetExcluded(item.FieldMeasurementUnit)
+	return u
+}
+
+// SetExtraMeasurements sets the "extra_measurements" field.
+func (u *ItemUpsert) SetExtraMeasurements(v string) *ItemUpsert {
+	u.Set(item.FieldExtraMeasurements, v)
+	return u
+}
+
+// UpdateExtraMeasurements sets the "extra_measurements" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateExtraMeasurements() *ItemUpsert {
+	u.SetExcluded(item.FieldExtraMeasurements)
+	return u
+}
+
+// ClearExtraMeasurements clears the value of the "extra_measurements" field.
+func (u *ItemUpsert) ClearExtraMeasurements() *ItemUpsert {
+	u.SetNull(item.FieldExtraMeasurements)
+	return u
+}
+
+// SetWeightLbs sets the "weight_lbs" field.
+func (u *ItemUpsert) SetWeightLbs(v int) *ItemUpsert {
+	u.Set(item.FieldWeightLbs, v)
+	return u
+}
+
+// UpdateWeightLbs sets the "weight_lbs" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateWeightLbs() *ItemUpsert {
+	u.SetExcluded(item.FieldWeightLbs)
+	return u
+}
+
+// AddWeightLbs adds v to the "weight_lbs" field.
+func (u *ItemUpsert) AddWeightLbs(v int) *ItemUpsert {
+	u.Add(item.FieldWeightLbs, v)
+	return u
+}
+
+// ClearWeightLbs clears the value of the "weight_lbs" field.
+func (u *ItemUpsert) ClearWeightLbs() *ItemUpsert {
+	u.SetNull(item.FieldWeightLbs)
+	return u
+}
+
+// SetWeightOz sets the "weight_oz" field.
+func (u *ItemUpsert) SetWeightOz(v float64) *ItemUpsert {
+	u.Set(item.FieldWeightOz, v)
+	return u
+}
+
+// UpdateWeightOz sets the "weight_oz" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateWeightOz() *ItemUpsert {
+	u.SetExcluded(item.FieldWeightOz)
+	return u
+}
+
+// AddWeightOz adds v to the "weight_oz" field.
+func (u *ItemUpsert) AddWeightOz(v float64) *ItemUpsert {
+	u.Add(item.FieldWeightOz, v)
+	return u
+}
+
+// ClearWeightOz clears the value of the "weight_oz" field.
+func (u *ItemUpsert) ClearWeightOz() *ItemUpsert {
+	u.SetNull(item.FieldWeightOz)
+	return u
+}
+
+// SetNotes sets the "notes" field.
+func (u *ItemUpsert) SetNotes(v string) *ItemUpsert {
+	u.Set(item.FieldNotes, v)
+	return u
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateNotes() *ItemUpsert {
+	u.SetExcluded(item.FieldNotes)
+	return u
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *ItemUpsert) ClearNotes() *ItemUpsert {
+	u.SetNull(item.FieldNotes)
+	return u
+}
+
+// SetWhatnotNumber sets the "whatnot_number" field.
+func (u *ItemUpsert) SetWhatnotNumber(v string) *ItemUpsert {
+	u.Set(item.FieldWhatnotNumber, v)
+	return u
+}
+
+// UpdateWhatnotNumber sets the "whatnot_number" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateWhatnotNumber() *ItemUpsert {
+	u.SetExcluded(item.FieldWhatnotNumber)
+	return u
+}
+
+// ClearWhatnotNumber clears the value of the "whatnot_number" field.
+func (u *ItemUpsert) ClearWhatnotNumber() *ItemUpsert {
+	u.SetNull(item.FieldWhatnotNumber)
 	return u
 }
 
@@ -712,6 +1208,24 @@ func (u *ItemUpsert) UpdateSoldAt() *ItemUpsert {
 // ClearSoldAt clears the value of the "sold_at" field.
 func (u *ItemUpsert) ClearSoldAt() *ItemUpsert {
 	u.SetNull(item.FieldSoldAt)
+	return u
+}
+
+// SetSoldPlaceID sets the "sold_place_id" field.
+func (u *ItemUpsert) SetSoldPlaceID(v string) *ItemUpsert {
+	u.Set(item.FieldSoldPlaceID, v)
+	return u
+}
+
+// UpdateSoldPlaceID sets the "sold_place_id" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateSoldPlaceID() *ItemUpsert {
+	u.SetExcluded(item.FieldSoldPlaceID)
+	return u
+}
+
+// ClearSoldPlaceID clears the value of the "sold_place_id" field.
+func (u *ItemUpsert) ClearSoldPlaceID() *ItemUpsert {
+	u.SetNull(item.FieldSoldPlaceID)
 	return u
 }
 
@@ -941,6 +1455,27 @@ func (u *ItemUpsertOne) ClearAcquisitionCostCents() *ItemUpsertOne {
 	})
 }
 
+// SetPurchasedAt sets the "purchased_at" field.
+func (u *ItemUpsertOne) SetPurchasedAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchasedAt(v)
+	})
+}
+
+// UpdatePurchasedAt sets the "purchased_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdatePurchasedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchasedAt()
+	})
+}
+
+// ClearPurchasedAt clears the value of the "purchased_at" field.
+func (u *ItemUpsertOne) ClearPurchasedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasedAt()
+	})
+}
+
 // SetListingPriceCents sets the "listing_price_cents" field.
 func (u *ItemUpsertOne) SetListingPriceCents(v int64) *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
@@ -966,6 +1501,223 @@ func (u *ItemUpsertOne) UpdateListingPriceCents() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearListingPriceCents() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearListingPriceCents()
+	})
+}
+
+// SetLength sets the "length" field.
+func (u *ItemUpsertOne) SetLength(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetLength(v)
+	})
+}
+
+// AddLength adds v to the "length" field.
+func (u *ItemUpsertOne) AddLength(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddLength(v)
+	})
+}
+
+// UpdateLength sets the "length" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateLength() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateLength()
+	})
+}
+
+// ClearLength clears the value of the "length" field.
+func (u *ItemUpsertOne) ClearLength() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearLength()
+	})
+}
+
+// SetWidth sets the "width" field.
+func (u *ItemUpsertOne) SetWidth(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWidth(v)
+	})
+}
+
+// AddWidth adds v to the "width" field.
+func (u *ItemUpsertOne) AddWidth(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddWidth(v)
+	})
+}
+
+// UpdateWidth sets the "width" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateWidth() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWidth()
+	})
+}
+
+// ClearWidth clears the value of the "width" field.
+func (u *ItemUpsertOne) ClearWidth() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWidth()
+	})
+}
+
+// SetHeight sets the "height" field.
+func (u *ItemUpsertOne) SetHeight(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetHeight(v)
+	})
+}
+
+// AddHeight adds v to the "height" field.
+func (u *ItemUpsertOne) AddHeight(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddHeight(v)
+	})
+}
+
+// UpdateHeight sets the "height" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateHeight() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateHeight()
+	})
+}
+
+// ClearHeight clears the value of the "height" field.
+func (u *ItemUpsertOne) ClearHeight() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearHeight()
+	})
+}
+
+// SetMeasurementUnit sets the "measurement_unit" field.
+func (u *ItemUpsertOne) SetMeasurementUnit(v item.MeasurementUnit) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMeasurementUnit(v)
+	})
+}
+
+// UpdateMeasurementUnit sets the "measurement_unit" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateMeasurementUnit() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMeasurementUnit()
+	})
+}
+
+// SetExtraMeasurements sets the "extra_measurements" field.
+func (u *ItemUpsertOne) SetExtraMeasurements(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetExtraMeasurements(v)
+	})
+}
+
+// UpdateExtraMeasurements sets the "extra_measurements" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateExtraMeasurements() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateExtraMeasurements()
+	})
+}
+
+// ClearExtraMeasurements clears the value of the "extra_measurements" field.
+func (u *ItemUpsertOne) ClearExtraMeasurements() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearExtraMeasurements()
+	})
+}
+
+// SetWeightLbs sets the "weight_lbs" field.
+func (u *ItemUpsertOne) SetWeightLbs(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWeightLbs(v)
+	})
+}
+
+// AddWeightLbs adds v to the "weight_lbs" field.
+func (u *ItemUpsertOne) AddWeightLbs(v int) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddWeightLbs(v)
+	})
+}
+
+// UpdateWeightLbs sets the "weight_lbs" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateWeightLbs() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWeightLbs()
+	})
+}
+
+// ClearWeightLbs clears the value of the "weight_lbs" field.
+func (u *ItemUpsertOne) ClearWeightLbs() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWeightLbs()
+	})
+}
+
+// SetWeightOz sets the "weight_oz" field.
+func (u *ItemUpsertOne) SetWeightOz(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWeightOz(v)
+	})
+}
+
+// AddWeightOz adds v to the "weight_oz" field.
+func (u *ItemUpsertOne) AddWeightOz(v float64) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddWeightOz(v)
+	})
+}
+
+// UpdateWeightOz sets the "weight_oz" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateWeightOz() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWeightOz()
+	})
+}
+
+// ClearWeightOz clears the value of the "weight_oz" field.
+func (u *ItemUpsertOne) ClearWeightOz() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWeightOz()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *ItemUpsertOne) SetNotes(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateNotes() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *ItemUpsertOne) ClearNotes() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetWhatnotNumber sets the "whatnot_number" field.
+func (u *ItemUpsertOne) SetWhatnotNumber(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWhatnotNumber(v)
+	})
+}
+
+// UpdateWhatnotNumber sets the "whatnot_number" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateWhatnotNumber() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWhatnotNumber()
+	})
+}
+
+// ClearWhatnotNumber clears the value of the "whatnot_number" field.
+func (u *ItemUpsertOne) ClearWhatnotNumber() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWhatnotNumber()
 	})
 }
 
@@ -1015,6 +1767,27 @@ func (u *ItemUpsertOne) UpdateSoldAt() *ItemUpsertOne {
 func (u *ItemUpsertOne) ClearSoldAt() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearSoldAt()
+	})
+}
+
+// SetSoldPlaceID sets the "sold_place_id" field.
+func (u *ItemUpsertOne) SetSoldPlaceID(v string) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetSoldPlaceID(v)
+	})
+}
+
+// UpdateSoldPlaceID sets the "sold_place_id" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateSoldPlaceID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateSoldPlaceID()
+	})
+}
+
+// ClearSoldPlaceID clears the value of the "sold_place_id" field.
+func (u *ItemUpsertOne) ClearSoldPlaceID() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearSoldPlaceID()
 	})
 }
 
@@ -1411,6 +2184,27 @@ func (u *ItemUpsertBulk) ClearAcquisitionCostCents() *ItemUpsertBulk {
 	})
 }
 
+// SetPurchasedAt sets the "purchased_at" field.
+func (u *ItemUpsertBulk) SetPurchasedAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetPurchasedAt(v)
+	})
+}
+
+// UpdatePurchasedAt sets the "purchased_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdatePurchasedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdatePurchasedAt()
+	})
+}
+
+// ClearPurchasedAt clears the value of the "purchased_at" field.
+func (u *ItemUpsertBulk) ClearPurchasedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearPurchasedAt()
+	})
+}
+
 // SetListingPriceCents sets the "listing_price_cents" field.
 func (u *ItemUpsertBulk) SetListingPriceCents(v int64) *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
@@ -1436,6 +2230,223 @@ func (u *ItemUpsertBulk) UpdateListingPriceCents() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearListingPriceCents() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearListingPriceCents()
+	})
+}
+
+// SetLength sets the "length" field.
+func (u *ItemUpsertBulk) SetLength(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetLength(v)
+	})
+}
+
+// AddLength adds v to the "length" field.
+func (u *ItemUpsertBulk) AddLength(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddLength(v)
+	})
+}
+
+// UpdateLength sets the "length" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateLength() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateLength()
+	})
+}
+
+// ClearLength clears the value of the "length" field.
+func (u *ItemUpsertBulk) ClearLength() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearLength()
+	})
+}
+
+// SetWidth sets the "width" field.
+func (u *ItemUpsertBulk) SetWidth(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWidth(v)
+	})
+}
+
+// AddWidth adds v to the "width" field.
+func (u *ItemUpsertBulk) AddWidth(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddWidth(v)
+	})
+}
+
+// UpdateWidth sets the "width" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateWidth() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWidth()
+	})
+}
+
+// ClearWidth clears the value of the "width" field.
+func (u *ItemUpsertBulk) ClearWidth() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWidth()
+	})
+}
+
+// SetHeight sets the "height" field.
+func (u *ItemUpsertBulk) SetHeight(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetHeight(v)
+	})
+}
+
+// AddHeight adds v to the "height" field.
+func (u *ItemUpsertBulk) AddHeight(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddHeight(v)
+	})
+}
+
+// UpdateHeight sets the "height" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateHeight() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateHeight()
+	})
+}
+
+// ClearHeight clears the value of the "height" field.
+func (u *ItemUpsertBulk) ClearHeight() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearHeight()
+	})
+}
+
+// SetMeasurementUnit sets the "measurement_unit" field.
+func (u *ItemUpsertBulk) SetMeasurementUnit(v item.MeasurementUnit) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetMeasurementUnit(v)
+	})
+}
+
+// UpdateMeasurementUnit sets the "measurement_unit" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateMeasurementUnit() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateMeasurementUnit()
+	})
+}
+
+// SetExtraMeasurements sets the "extra_measurements" field.
+func (u *ItemUpsertBulk) SetExtraMeasurements(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetExtraMeasurements(v)
+	})
+}
+
+// UpdateExtraMeasurements sets the "extra_measurements" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateExtraMeasurements() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateExtraMeasurements()
+	})
+}
+
+// ClearExtraMeasurements clears the value of the "extra_measurements" field.
+func (u *ItemUpsertBulk) ClearExtraMeasurements() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearExtraMeasurements()
+	})
+}
+
+// SetWeightLbs sets the "weight_lbs" field.
+func (u *ItemUpsertBulk) SetWeightLbs(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWeightLbs(v)
+	})
+}
+
+// AddWeightLbs adds v to the "weight_lbs" field.
+func (u *ItemUpsertBulk) AddWeightLbs(v int) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddWeightLbs(v)
+	})
+}
+
+// UpdateWeightLbs sets the "weight_lbs" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateWeightLbs() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWeightLbs()
+	})
+}
+
+// ClearWeightLbs clears the value of the "weight_lbs" field.
+func (u *ItemUpsertBulk) ClearWeightLbs() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWeightLbs()
+	})
+}
+
+// SetWeightOz sets the "weight_oz" field.
+func (u *ItemUpsertBulk) SetWeightOz(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWeightOz(v)
+	})
+}
+
+// AddWeightOz adds v to the "weight_oz" field.
+func (u *ItemUpsertBulk) AddWeightOz(v float64) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.AddWeightOz(v)
+	})
+}
+
+// UpdateWeightOz sets the "weight_oz" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateWeightOz() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWeightOz()
+	})
+}
+
+// ClearWeightOz clears the value of the "weight_oz" field.
+func (u *ItemUpsertBulk) ClearWeightOz() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWeightOz()
+	})
+}
+
+// SetNotes sets the "notes" field.
+func (u *ItemUpsertBulk) SetNotes(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetNotes(v)
+	})
+}
+
+// UpdateNotes sets the "notes" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateNotes() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateNotes()
+	})
+}
+
+// ClearNotes clears the value of the "notes" field.
+func (u *ItemUpsertBulk) ClearNotes() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearNotes()
+	})
+}
+
+// SetWhatnotNumber sets the "whatnot_number" field.
+func (u *ItemUpsertBulk) SetWhatnotNumber(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetWhatnotNumber(v)
+	})
+}
+
+// UpdateWhatnotNumber sets the "whatnot_number" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateWhatnotNumber() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateWhatnotNumber()
+	})
+}
+
+// ClearWhatnotNumber clears the value of the "whatnot_number" field.
+func (u *ItemUpsertBulk) ClearWhatnotNumber() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearWhatnotNumber()
 	})
 }
 
@@ -1485,6 +2496,27 @@ func (u *ItemUpsertBulk) UpdateSoldAt() *ItemUpsertBulk {
 func (u *ItemUpsertBulk) ClearSoldAt() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.ClearSoldAt()
+	})
+}
+
+// SetSoldPlaceID sets the "sold_place_id" field.
+func (u *ItemUpsertBulk) SetSoldPlaceID(v string) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetSoldPlaceID(v)
+	})
+}
+
+// UpdateSoldPlaceID sets the "sold_place_id" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateSoldPlaceID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateSoldPlaceID()
+	})
+}
+
+// ClearSoldPlaceID clears the value of the "sold_place_id" field.
+func (u *ItemUpsertBulk) ClearSoldPlaceID() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearSoldPlaceID()
 	})
 }
 

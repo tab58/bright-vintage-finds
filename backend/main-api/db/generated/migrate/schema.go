@@ -21,9 +21,20 @@ var (
 		{Name: "condition", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "listed", "sold", "archived"}, Default: "draft"},
 		{Name: "acquisition_cost_cents", Type: field.TypeInt64, Nullable: true},
+		{Name: "purchased_at", Type: field.TypeTime, Nullable: true},
 		{Name: "listing_price_cents", Type: field.TypeInt64, Nullable: true},
+		{Name: "length", Type: field.TypeFloat64, Nullable: true},
+		{Name: "width", Type: field.TypeFloat64, Nullable: true},
+		{Name: "height", Type: field.TypeFloat64, Nullable: true},
+		{Name: "measurement_unit", Type: field.TypeEnum, Enums: []string{"inch", "cm"}, Default: "inch"},
+		{Name: "extra_measurements", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "weight_lbs", Type: field.TypeInt, Nullable: true},
+		{Name: "weight_oz", Type: field.TypeFloat64, Nullable: true},
+		{Name: "notes", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "whatnot_number", Type: field.TypeString, Unique: true, Nullable: true},
 		{Name: "sold_price_cents", Type: field.TypeInt64, Nullable: true},
 		{Name: "sold_at", Type: field.TypeTime, Nullable: true},
+		{Name: "sold_place_id", Type: field.TypeString, Nullable: true},
 		{Name: "user_items", Type: field.TypeString},
 	}
 	// ItemsTable holds the schema information for the "items" table.
@@ -33,8 +44,14 @@ var (
 		PrimaryKey: []*schema.Column{ItemsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
+				Symbol:     "items_selling_places_sold_place",
+				Columns:    []*schema.Column{ItemsColumns[24]},
+				RefColumns: []*schema.Column{SellingPlacesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
 				Symbol:     "items_users_items",
-				Columns:    []*schema.Column{ItemsColumns[14]},
+				Columns:    []*schema.Column{ItemsColumns[25]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -67,6 +84,37 @@ var (
 			},
 		},
 	}
+	// LabelsColumns holds the columns for the "labels" table.
+	LabelsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "version", Type: field.TypeInt, Default: 1},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+	}
+	// LabelsTable holds the schema information for the "labels" table.
+	LabelsTable = &schema.Table{
+		Name:       "labels",
+		Columns:    LabelsColumns,
+		PrimaryKey: []*schema.Column{LabelsColumns[0]},
+	}
+	// SellingPlacesColumns holds the columns for the "selling_places" table.
+	SellingPlacesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "version", Type: field.TypeInt, Default: 1},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "is_builtin", Type: field.TypeBool, Default: false},
+	}
+	// SellingPlacesTable holds the schema information for the "selling_places" table.
+	SellingPlacesTable = &schema.Table{
+		Name:       "selling_places",
+		Columns:    SellingPlacesColumns,
+		PrimaryKey: []*schema.Column{SellingPlacesColumns[0]},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true},
@@ -85,15 +133,74 @@ var (
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 	}
+	// ItemSellingPlacesColumns holds the columns for the "item_selling_places" table.
+	ItemSellingPlacesColumns = []*schema.Column{
+		{Name: "item_id", Type: field.TypeString},
+		{Name: "selling_place_id", Type: field.TypeString},
+	}
+	// ItemSellingPlacesTable holds the schema information for the "item_selling_places" table.
+	ItemSellingPlacesTable = &schema.Table{
+		Name:       "item_selling_places",
+		Columns:    ItemSellingPlacesColumns,
+		PrimaryKey: []*schema.Column{ItemSellingPlacesColumns[0], ItemSellingPlacesColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "item_selling_places_item_id",
+				Columns:    []*schema.Column{ItemSellingPlacesColumns[0]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "item_selling_places_selling_place_id",
+				Columns:    []*schema.Column{ItemSellingPlacesColumns[1]},
+				RefColumns: []*schema.Column{SellingPlacesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// ItemLabelsColumns holds the columns for the "item_labels" table.
+	ItemLabelsColumns = []*schema.Column{
+		{Name: "item_id", Type: field.TypeString},
+		{Name: "label_id", Type: field.TypeString},
+	}
+	// ItemLabelsTable holds the schema information for the "item_labels" table.
+	ItemLabelsTable = &schema.Table{
+		Name:       "item_labels",
+		Columns:    ItemLabelsColumns,
+		PrimaryKey: []*schema.Column{ItemLabelsColumns[0], ItemLabelsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "item_labels_item_id",
+				Columns:    []*schema.Column{ItemLabelsColumns[0]},
+				RefColumns: []*schema.Column{ItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "item_labels_label_id",
+				Columns:    []*schema.Column{ItemLabelsColumns[1]},
+				RefColumns: []*schema.Column{LabelsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ItemsTable,
 		ItemImagesTable,
+		LabelsTable,
+		SellingPlacesTable,
 		UsersTable,
+		ItemSellingPlacesTable,
+		ItemLabelsTable,
 	}
 )
 
 func init() {
-	ItemsTable.ForeignKeys[0].RefTable = UsersTable
+	ItemsTable.ForeignKeys[0].RefTable = SellingPlacesTable
+	ItemsTable.ForeignKeys[1].RefTable = UsersTable
 	ItemImagesTable.ForeignKeys[0].RefTable = ItemsTable
+	ItemSellingPlacesTable.ForeignKeys[0].RefTable = ItemsTable
+	ItemSellingPlacesTable.ForeignKeys[1].RefTable = SellingPlacesTable
+	ItemLabelsTable.ForeignKeys[0].RefTable = ItemsTable
+	ItemLabelsTable.ForeignKeys[1].RefTable = LabelsTable
 }

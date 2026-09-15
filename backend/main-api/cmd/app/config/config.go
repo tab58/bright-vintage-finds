@@ -24,6 +24,11 @@ type Config struct {
 	// AWS S3 configuration for file uploads
 	S3BaseEndpoint string `mapstructure:"S3_BASE_ENDPOINT"`
 	S3UploadBucket string `mapstructure:"S3_UPLOAD_BUCKET"`
+	// S3PublicEndpoint is the externally-reachable form of S3BaseEndpoint
+	// (e.g. http://localhost:4566 while floci answers at http://floci:4566 on
+	// the Docker network). When set, presigned URLs have their host rewritten
+	// so browsers outside the internal network can resolve them.
+	S3PublicEndpoint string `mapstructure:"S3_PUBLIC_ENDPOINT"`
 
 	// for Asynq server and caching
 	RedisURL string `mapstructure:"REDIS_URL" json:"-"` // DSN may carry credentials; keep out of the config log line
@@ -93,6 +98,12 @@ func Validate(cfg *Config) error {
 
 	if cfg.ServerPort == "" {
 		return fmt.Errorf("SERVER_PORT is required")
+	}
+
+	// The inventory requires the database in production; development can boot
+	// without it (healthcheck smoke tests).
+	if cfg.Env == config.AppModeProduction && cfg.MainDBURL == "" {
+		return fmt.Errorf("MAIN_DB_URL is required in production")
 	}
 
 	return nil

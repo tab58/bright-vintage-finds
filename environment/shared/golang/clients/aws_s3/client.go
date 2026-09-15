@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -20,6 +21,9 @@ type Client interface {
 	DeleteFile(ctx context.Context, bucket, key string) error
 	FileExists(ctx context.Context, bucket, key string) (bool, error)
 	Ping(ctx context.Context, bucket string) error
+	// PresignGetObject returns a short-lived GET URL for an object, so
+	// browsers can fetch files directly from storage.
+	PresignGetObject(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
 }
 
 type clientOptions struct {
@@ -159,4 +163,17 @@ func (c *client) DownloadFile(ctx context.Context, bucket, key string) (io.ReadC
 		return nil, fmt.Errorf("failed to download file from S3: %w", err)
 	}
 	return resp.Body, nil
+}
+
+// PresignGetObject returns a pre-signed GET URL valid for ttl.
+func (c *client) PresignGetObject(ctx context.Context, bucket, key string, ttl time.Duration) (string, error) {
+	presigner := s3.NewPresignClient(c.client)
+	req, err := presigner.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}, s3.WithPresignExpires(ttl))
+	if err != nil {
+		return "", fmt.Errorf("failed to presign GET for %s/%s: %w", bucket, key, err)
+	}
+	return req.URL, nil
 }

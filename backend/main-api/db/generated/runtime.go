@@ -5,6 +5,8 @@ package generated
 import (
 	"main-api/db/generated/item"
 	"main-api/db/generated/itemimage"
+	"main-api/db/generated/label"
+	"main-api/db/generated/sellingplace"
 	"main-api/db/generated/user"
 	"main-api/db/schema"
 	"time"
@@ -72,6 +74,72 @@ func init() {
 	itemimageDescID := itemimageMixinFields0[0].Descriptor()
 	// itemimage.DefaultID holds the default value on creation for the id field.
 	itemimage.DefaultID = itemimageDescID.Default.(func() string)
+	labelMixin := schema.Label{}.Mixin()
+	labelMixinFields0 := labelMixin[0].Fields()
+	_ = labelMixinFields0
+	labelMixinFields1 := labelMixin[1].Fields()
+	_ = labelMixinFields1
+	labelMixinFields2 := labelMixin[2].Fields()
+	_ = labelMixinFields2
+	labelFields := schema.Label{}.Fields()
+	_ = labelFields
+	// labelDescCreatedAt is the schema descriptor for created_at field.
+	labelDescCreatedAt := labelMixinFields1[0].Descriptor()
+	// label.DefaultCreatedAt holds the default value on creation for the created_at field.
+	label.DefaultCreatedAt = labelDescCreatedAt.Default.(func() time.Time)
+	// labelDescUpdatedAt is the schema descriptor for updated_at field.
+	labelDescUpdatedAt := labelMixinFields2[0].Descriptor()
+	// label.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	label.DefaultUpdatedAt = labelDescUpdatedAt.Default.(func() time.Time)
+	// label.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	label.UpdateDefaultUpdatedAt = labelDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// labelDescVersion is the schema descriptor for version field.
+	labelDescVersion := labelMixinFields2[1].Descriptor()
+	// label.DefaultVersion holds the default value on creation for the version field.
+	label.DefaultVersion = labelDescVersion.Default.(int)
+	// labelDescName is the schema descriptor for name field.
+	labelDescName := labelFields[0].Descriptor()
+	// label.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	label.NameValidator = labelDescName.Validators[0].(func(string) error)
+	// labelDescID is the schema descriptor for id field.
+	labelDescID := labelMixinFields0[0].Descriptor()
+	// label.DefaultID holds the default value on creation for the id field.
+	label.DefaultID = labelDescID.Default.(func() string)
+	sellingplaceMixin := schema.SellingPlace{}.Mixin()
+	sellingplaceMixinFields0 := sellingplaceMixin[0].Fields()
+	_ = sellingplaceMixinFields0
+	sellingplaceMixinFields1 := sellingplaceMixin[1].Fields()
+	_ = sellingplaceMixinFields1
+	sellingplaceMixinFields2 := sellingplaceMixin[2].Fields()
+	_ = sellingplaceMixinFields2
+	sellingplaceFields := schema.SellingPlace{}.Fields()
+	_ = sellingplaceFields
+	// sellingplaceDescCreatedAt is the schema descriptor for created_at field.
+	sellingplaceDescCreatedAt := sellingplaceMixinFields1[0].Descriptor()
+	// sellingplace.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sellingplace.DefaultCreatedAt = sellingplaceDescCreatedAt.Default.(func() time.Time)
+	// sellingplaceDescUpdatedAt is the schema descriptor for updated_at field.
+	sellingplaceDescUpdatedAt := sellingplaceMixinFields2[0].Descriptor()
+	// sellingplace.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sellingplace.DefaultUpdatedAt = sellingplaceDescUpdatedAt.Default.(func() time.Time)
+	// sellingplace.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sellingplace.UpdateDefaultUpdatedAt = sellingplaceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sellingplaceDescVersion is the schema descriptor for version field.
+	sellingplaceDescVersion := sellingplaceMixinFields2[1].Descriptor()
+	// sellingplace.DefaultVersion holds the default value on creation for the version field.
+	sellingplace.DefaultVersion = sellingplaceDescVersion.Default.(int)
+	// sellingplaceDescName is the schema descriptor for name field.
+	sellingplaceDescName := sellingplaceFields[0].Descriptor()
+	// sellingplace.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	sellingplace.NameValidator = sellingplaceDescName.Validators[0].(func(string) error)
+	// sellingplaceDescIsBuiltin is the schema descriptor for is_builtin field.
+	sellingplaceDescIsBuiltin := sellingplaceFields[1].Descriptor()
+	// sellingplace.DefaultIsBuiltin holds the default value on creation for the is_builtin field.
+	sellingplace.DefaultIsBuiltin = sellingplaceDescIsBuiltin.Default.(bool)
+	// sellingplaceDescID is the schema descriptor for id field.
+	sellingplaceDescID := sellingplaceMixinFields0[0].Descriptor()
+	// sellingplace.DefaultID holds the default value on creation for the id field.
+	sellingplace.DefaultID = sellingplaceDescID.Default.(func() string)
 	userMixin := schema.User{}.Mixin()
 	userMixinFields0 := userMixin[0].Fields()
 	_ = userMixinFields0

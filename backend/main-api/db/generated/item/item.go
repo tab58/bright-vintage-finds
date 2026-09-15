@@ -35,16 +35,44 @@ const (
 	FieldStatus = "status"
 	// FieldAcquisitionCostCents holds the string denoting the acquisition_cost_cents field in the database.
 	FieldAcquisitionCostCents = "acquisition_cost_cents"
+	// FieldPurchasedAt holds the string denoting the purchased_at field in the database.
+	FieldPurchasedAt = "purchased_at"
 	// FieldListingPriceCents holds the string denoting the listing_price_cents field in the database.
 	FieldListingPriceCents = "listing_price_cents"
+	// FieldLength holds the string denoting the length field in the database.
+	FieldLength = "length"
+	// FieldWidth holds the string denoting the width field in the database.
+	FieldWidth = "width"
+	// FieldHeight holds the string denoting the height field in the database.
+	FieldHeight = "height"
+	// FieldMeasurementUnit holds the string denoting the measurement_unit field in the database.
+	FieldMeasurementUnit = "measurement_unit"
+	// FieldExtraMeasurements holds the string denoting the extra_measurements field in the database.
+	FieldExtraMeasurements = "extra_measurements"
+	// FieldWeightLbs holds the string denoting the weight_lbs field in the database.
+	FieldWeightLbs = "weight_lbs"
+	// FieldWeightOz holds the string denoting the weight_oz field in the database.
+	FieldWeightOz = "weight_oz"
+	// FieldNotes holds the string denoting the notes field in the database.
+	FieldNotes = "notes"
+	// FieldWhatnotNumber holds the string denoting the whatnot_number field in the database.
+	FieldWhatnotNumber = "whatnot_number"
 	// FieldSoldPriceCents holds the string denoting the sold_price_cents field in the database.
 	FieldSoldPriceCents = "sold_price_cents"
 	// FieldSoldAt holds the string denoting the sold_at field in the database.
 	FieldSoldAt = "sold_at"
+	// FieldSoldPlaceID holds the string denoting the sold_place_id field in the database.
+	FieldSoldPlaceID = "sold_place_id"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
 	EdgeOwner = "owner"
 	// EdgeImages holds the string denoting the images edge name in mutations.
 	EdgeImages = "images"
+	// EdgeSellingPlaces holds the string denoting the selling_places edge name in mutations.
+	EdgeSellingPlaces = "selling_places"
+	// EdgeLabels holds the string denoting the labels edge name in mutations.
+	EdgeLabels = "labels"
+	// EdgeSoldPlace holds the string denoting the sold_place edge name in mutations.
+	EdgeSoldPlace = "sold_place"
 	// Table holds the table name of the item in the database.
 	Table = "items"
 	// OwnerTable is the table that holds the owner relation/edge.
@@ -61,6 +89,23 @@ const (
 	ImagesInverseTable = "item_images"
 	// ImagesColumn is the table column denoting the images relation/edge.
 	ImagesColumn = "item_images"
+	// SellingPlacesTable is the table that holds the selling_places relation/edge. The primary key declared below.
+	SellingPlacesTable = "item_selling_places"
+	// SellingPlacesInverseTable is the table name for the SellingPlace entity.
+	// It exists in this package in order to avoid circular dependency with the "sellingplace" package.
+	SellingPlacesInverseTable = "selling_places"
+	// LabelsTable is the table that holds the labels relation/edge. The primary key declared below.
+	LabelsTable = "item_labels"
+	// LabelsInverseTable is the table name for the Label entity.
+	// It exists in this package in order to avoid circular dependency with the "label" package.
+	LabelsInverseTable = "labels"
+	// SoldPlaceTable is the table that holds the sold_place relation/edge.
+	SoldPlaceTable = "items"
+	// SoldPlaceInverseTable is the table name for the SellingPlace entity.
+	// It exists in this package in order to avoid circular dependency with the "sellingplace" package.
+	SoldPlaceInverseTable = "selling_places"
+	// SoldPlaceColumn is the table column denoting the sold_place relation/edge.
+	SoldPlaceColumn = "sold_place_id"
 )
 
 // Columns holds all SQL columns for item fields.
@@ -76,9 +121,20 @@ var Columns = []string{
 	FieldCondition,
 	FieldStatus,
 	FieldAcquisitionCostCents,
+	FieldPurchasedAt,
 	FieldListingPriceCents,
+	FieldLength,
+	FieldWidth,
+	FieldHeight,
+	FieldMeasurementUnit,
+	FieldExtraMeasurements,
+	FieldWeightLbs,
+	FieldWeightOz,
+	FieldNotes,
+	FieldWhatnotNumber,
 	FieldSoldPriceCents,
 	FieldSoldAt,
+	FieldSoldPlaceID,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "items"
@@ -86,6 +142,15 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"user_items",
 }
+
+var (
+	// SellingPlacesPrimaryKey and SellingPlacesColumn2 are the table columns denoting the
+	// primary key for the selling_places relation (M2M).
+	SellingPlacesPrimaryKey = []string{"item_id", "selling_place_id"}
+	// LabelsPrimaryKey and LabelsColumn2 are the table columns denoting the
+	// primary key for the labels relation (M2M).
+	LabelsPrimaryKey = []string{"item_id", "label_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -142,6 +207,32 @@ func StatusValidator(s Status) error {
 		return nil
 	default:
 		return fmt.Errorf("item: invalid enum value for status field: %q", s)
+	}
+}
+
+// MeasurementUnit defines the type for the "measurement_unit" enum field.
+type MeasurementUnit string
+
+// MeasurementUnitInch is the default value of the MeasurementUnit enum.
+const DefaultMeasurementUnit = MeasurementUnitInch
+
+// MeasurementUnit values.
+const (
+	MeasurementUnitInch MeasurementUnit = "inch"
+	MeasurementUnitCm   MeasurementUnit = "cm"
+)
+
+func (mu MeasurementUnit) String() string {
+	return string(mu)
+}
+
+// MeasurementUnitValidator is a validator for the "measurement_unit" field enum values. It is called by the builders before save.
+func MeasurementUnitValidator(mu MeasurementUnit) error {
+	switch mu {
+	case MeasurementUnitInch, MeasurementUnitCm:
+		return nil
+	default:
+		return fmt.Errorf("item: invalid enum value for measurement_unit field: %q", mu)
 	}
 }
 
@@ -203,9 +294,59 @@ func ByAcquisitionCostCents(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAcquisitionCostCents, opts...).ToFunc()
 }
 
+// ByPurchasedAt orders the results by the purchased_at field.
+func ByPurchasedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPurchasedAt, opts...).ToFunc()
+}
+
 // ByListingPriceCents orders the results by the listing_price_cents field.
 func ByListingPriceCents(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldListingPriceCents, opts...).ToFunc()
+}
+
+// ByLength orders the results by the length field.
+func ByLength(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLength, opts...).ToFunc()
+}
+
+// ByWidth orders the results by the width field.
+func ByWidth(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWidth, opts...).ToFunc()
+}
+
+// ByHeight orders the results by the height field.
+func ByHeight(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHeight, opts...).ToFunc()
+}
+
+// ByMeasurementUnit orders the results by the measurement_unit field.
+func ByMeasurementUnit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMeasurementUnit, opts...).ToFunc()
+}
+
+// ByExtraMeasurements orders the results by the extra_measurements field.
+func ByExtraMeasurements(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExtraMeasurements, opts...).ToFunc()
+}
+
+// ByWeightLbs orders the results by the weight_lbs field.
+func ByWeightLbs(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeightLbs, opts...).ToFunc()
+}
+
+// ByWeightOz orders the results by the weight_oz field.
+func ByWeightOz(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeightOz, opts...).ToFunc()
+}
+
+// ByNotes orders the results by the notes field.
+func ByNotes(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNotes, opts...).ToFunc()
+}
+
+// ByWhatnotNumber orders the results by the whatnot_number field.
+func ByWhatnotNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWhatnotNumber, opts...).ToFunc()
 }
 
 // BySoldPriceCents orders the results by the sold_price_cents field.
@@ -216,6 +357,11 @@ func BySoldPriceCents(opts ...sql.OrderTermOption) OrderOption {
 // BySoldAt orders the results by the sold_at field.
 func BySoldAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSoldAt, opts...).ToFunc()
+}
+
+// BySoldPlaceID orders the results by the sold_place_id field.
+func BySoldPlaceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSoldPlaceID, opts...).ToFunc()
 }
 
 // ByOwnerField orders the results by owner field.
@@ -238,6 +384,41 @@ func ByImages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newImagesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySellingPlacesCount orders the results by selling_places count.
+func BySellingPlacesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSellingPlacesStep(), opts...)
+	}
+}
+
+// BySellingPlaces orders the results by selling_places terms.
+func BySellingPlaces(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSellingPlacesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByLabelsCount orders the results by labels count.
+func ByLabelsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newLabelsStep(), opts...)
+	}
+}
+
+// ByLabels orders the results by labels terms.
+func ByLabels(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newLabelsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySoldPlaceField orders the results by sold_place field.
+func BySoldPlaceField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSoldPlaceStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newOwnerStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -250,5 +431,26 @@ func newImagesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ImagesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ImagesTable, ImagesColumn),
+	)
+}
+func newSellingPlacesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SellingPlacesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, SellingPlacesTable, SellingPlacesPrimaryKey...),
+	)
+}
+func newLabelsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(LabelsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, LabelsTable, LabelsPrimaryKey...),
+	)
+}
+func newSoldPlaceStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SoldPlaceInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, SoldPlaceTable, SoldPlaceColumn),
 	)
 }

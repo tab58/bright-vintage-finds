@@ -45,3 +45,24 @@ tested in the shared module (`clients/aws_s3/client_test.go`).
 | unit | none in main-api | wiring is a config guard in `run()` (endpoint set but bucket empty → boot error); covered by the shared-module tests otherwise |
 | integration | none yet | no upload feature exists; add floci-backed round-trip test with the first upload endpoint |
 | contract/E2E | none yet | same — nothing user-facing consumes storage |
+
+## Inventory admin API (`/admin/items`, `/admin/selling-places`, `/admin/labels`)
+
+**Status:** implemented (Phase 2 of the inventory plan, `docs/plans/inventory-system.md`); E2E pending the Phase 3 frontend.
+
+Single-owner inventory: CRUD for items (with search by name / selling place /
+label / Whatnot number), mark-sold, image upload (server-side S3 PUT), and
+managed lists for selling places (6 seeded builtins) and labels.
+
+| Level | Case | Why |
+|-------|------|-----|
+| unit | item create with full intake payload → stored fields round-trip | core intake |
+| unit | item create requires name; unknown status/enum rejected | input validation |
+| unit | item list filters: name substring, place id, label id, whatnot_number, status | search requirements |
+| unit | whatnot_number uniqueness: duplicate non-null → error; multiple NULLs OK | partial unique semantics |
+| unit | mark-sold sets status=sold, sold_at/sold_price/sold_place atomically; invalid place → 4xx | sale flow integrity |
+| unit | labels/places CRUD: create, list, soft-delete; duplicate name → 409 | managed lists |
+| unit | builtin selling-place seed is idempotent (re-run → no duplicates; deleted builtin is NOT resurrected) | boot seed correctness |
+| integration | item + images round-trip against floci: upload via API → FileExists in bucket → ItemImage rows ordered by display_order | first upload feature (was deferred in the storage entry above) |
+| integration | full flow: create place → create labeled/placed item → search finds it → mark sold → sold fields set | vertical slice |
+| contract/E2E | none yet | frontend inventory client ships in Phase 3 |
