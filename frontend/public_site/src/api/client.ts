@@ -193,6 +193,10 @@ export function markItemSold(id: string, body: MarkSoldBody): Promise<Item> {
   })
 }
 
+export function deleteItem(id: string): Promise<void> {
+  return request<void>(`/admin/items/${id}`, { method: 'DELETE' })
+}
+
 export async function listItemImages(itemId: string): Promise<ItemImage[]> {
   const out = await request<{ body: ItemImage[] }>(`/admin/items/${itemId}/images`)
   return unwrap(out)

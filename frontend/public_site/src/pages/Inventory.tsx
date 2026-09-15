@@ -14,6 +14,7 @@ import {
   listItems,
   listLabels,
   listSellingPlaces,
+  deleteItem,
   updateItem,
   type Item,
   type ItemStatus,
@@ -79,6 +80,16 @@ export default function InventoryPage() {
     if (next.has(value)) next.delete(value)
     else next.add(value)
     setOpen(next)
+  }
+
+  async function remove(it: Item) {
+    setMenuItem(null)
+    try {
+      await deleteItem(it.id)
+      setReloadKey((k) => k + 1)
+    } catch (e) {
+      setError(String(e))
+    }
   }
 
   async function move(it: Item, to: ItemStatus) {
@@ -161,7 +172,12 @@ export default function InventoryPage() {
       })}
       {items.length === 0 && !error && <p className="text-sm text-muted-foreground">No items match.</p>}
 
-      <ItemActions item={menuItem} onClose={() => setMenuItem(null)} onMove={move} />
+      <ItemActions
+        item={menuItem}
+        onClose={() => setMenuItem(null)}
+        onMove={move}
+        onDelete={remove}
+      />
     </main>
   )
 }
@@ -237,7 +253,8 @@ function ItemRow({ item, onLongPress }: { item: Item; onLongPress: () => void })
 }
 
 // The moves each status allows. Selling needs a place and a price, so it lives
-// on the item page rather than here.
+// on the item page rather than here. Deleting a draft is handled separately:
+// it is not a status change.
 const MOVES: Record<ItemStatus, { to: ItemStatus; label: string }[]> = {
   draft: [
     { to: 'listed', label: 'List it' },
@@ -255,13 +272,16 @@ function ItemActions({
   item,
   onClose,
   onMove,
+  onDelete,
 }: {
   item: Item | null
   onClose: () => void
   onMove: (item: Item, to: ItemStatus) => void
+  onDelete: (item: Item) => void
 }) {
   if (!item) return null
-  const moves = MOVES[item.status]
+  const neverListed = item.status === 'draft' && !item.first_listed_at
+  const moves = MOVES[item.status].filter((m) => !(neverListed && m.to === 'archived'))
   const canList = item.selling_place_ids.length > 0
 
   return (
@@ -285,6 +305,15 @@ function ItemActions({
               </Button>
             )
           })}
+          {neverListed && (
+            <Button
+              variant="outline"
+              className="h-11 w-full text-destructive hover:text-destructive"
+              onClick={() => onDelete(item)}
+            >
+              Delete
+            </Button>
+          )}
           {moves.length === 0 && (
             <p className="text-sm text-muted-foreground">Sold items stay put. Open it to fix the sale.</p>
           )}

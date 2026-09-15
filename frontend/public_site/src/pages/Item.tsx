@@ -1,6 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Archive, Camera, ChevronLeft, Images, Pencil, Plus, RotateCcw, Tag, Undo2 } from 'lucide-react'
+import {
+  Archive,
+  Camera,
+  ChevronLeft,
+  Images,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Tag,
+  Trash2,
+  Undo2,
+} from 'lucide-react'
 import { ChipPicker } from '@/components/chip-picker'
 import { ACCEPTED_IMAGE_TYPES, toUploadableImage } from '@/components/image-upload'
 import {
@@ -21,6 +32,7 @@ import { Label } from '@/components/ui/label'
 import {
   createLabel,
   createSellingPlace,
+  deleteItem,
   getItem,
   listItemImages,
   listLabels,
@@ -73,6 +85,7 @@ export default function ItemPage() {
   const [soldAt, setSoldAt] = useState('')
 
   const [sellOpen, setSellOpen] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const cameraInput = useRef<HTMLInputElement>(null)
   const libraryInput = useRef<HTMLInputElement>(null)
   // Details are read-only until the owner deliberately opens the form.
@@ -157,6 +170,9 @@ export default function ItemPage() {
   // Photos stay editable while the item is still a draft; once listed it is
   // out in the world and the pictures are part of the listing.
   const canAddPhotos = item.status === 'draft'
+  // Never listed: the item never left the workbench, so it can just go away.
+  // Anything that reached listed is archived instead, and the API enforces it.
+  const canDelete = item.status === 'draft' && !item.first_listed_at
   const canList = checkedPlaces.size > 0
 
   function toggle(set: Set<string>, id: string, apply: (s: Set<string>) => void) {
@@ -439,14 +455,25 @@ export default function ItemPage() {
               {!canList && (
                 <p className="text-center text-xs text-muted-foreground">Pick a selling place first</p>
               )}
-              <Button
-                variant="ghost"
-                className="h-9 w-full text-muted-foreground"
-                disabled={busy}
-                onClick={() => setStatus('archived', 'Archive')}
-              >
-                <Archive /> Archive
-              </Button>
+              {canDelete ? (
+                <Button
+                  variant="ghost"
+                  className="h-9 w-full text-destructive hover:text-destructive"
+                  disabled={busy}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Trash2 /> Delete item
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="h-9 w-full text-muted-foreground"
+                  disabled={busy}
+                  onClick={() => setStatus('archived', 'Archive')}
+                >
+                  <Archive /> Archive
+                </Button>
+              )}
             </>
           )}
 
@@ -494,6 +521,41 @@ export default function ItemPage() {
           )}
         </div>
       </div>
+
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent className="sm:max-w-[360px]">
+          <DialogHeader>
+            <DialogTitle>Delete this item?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            “{item.name}” and its photos will be removed. This cannot be undone from the app.
+          </p>
+          <DialogFooter>
+            <div className="flex w-full gap-2">
+              <Button variant="ghost" className="h-11 flex-1" onClick={() => setConfirmDelete(false)}>
+                Cancel
+              </Button>
+              <Button
+                className="h-11 flex-1 bg-destructive text-white hover:bg-destructive/90"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true)
+                  try {
+                    await deleteItem(item.id)
+                    navigate('/inventory')
+                  } catch (e) {
+                    setError(`Delete failed: ${String(e)}`)
+                    setBusy(false)
+                    setConfirmDelete(false)
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <MarkSoldDialog
         open={sellOpen}

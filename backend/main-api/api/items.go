@@ -549,6 +549,57 @@ func registerItemCRUD(api huma.API, deps *AppDeps) {
 	})
 
 	huma.Register(api, huma.Operation{
+		OperationID: "delete-item",
+		Method:      http.MethodDelete,
+		Path:        "/admin/items/{id}",
+		Summary:     "Delete a draft item that was never listed",
+	}, func(ctx context.Context, in *itemIDInput) (*struct{}, error) {
+		it, err := client.Item.Query().
+			Where(item.IDEQ(in.ID), item.DeletedAtIsNil()).
+			Select(item.FieldStatus, item.FieldFirstListedAt).
+			Only(ctx)
+		if generated.IsNotFound(err) {
+			return nil, huma.Error404NotFound("item not found")
+		}
+		if err != nil {
+			return nil, fmt.Errorf("loading item: %w", err)
+		}
+		// Once an item has been listed it is part of the sales record, even if
+		// it is back in draft: archiving keeps it, deleting would lose it.
+		if it.FirstListedAt != nil || it.Status != item.StatusDraft {
+			return nil, huma.Error409Conflict("this item has been listed; archive it instead of deleting")
+		}
+
+		// The pictures go too: stored objects first, then their rows. Objects
+		// are removed before the rows so nothing can be orphaned in the bucket
+		// with no record of what it was.
+		images, err := client.ItemImage.Query().
+			Where(itemimage.HasItemWith(item.ID(in.ID))).
+			All(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("loading item images: %w", err)
+		}
+		for _, img := range images {
+			if deps.Store == nil {
+				break
+			}
+			if err := deps.Store.DeleteFile(ctx, img.UploadBucket, img.UploadKey); err != nil {
+				return nil, fmt.Errorf("deleting image object %s: %w", img.UploadKey, err)
+			}
+		}
+		if _, err := client.ItemImage.Delete().
+			Where(itemimage.HasItemWith(item.ID(in.ID))).
+			Exec(ctx); err != nil {
+			return nil, fmt.Errorf("deleting item image rows: %w", err)
+		}
+
+		if err := client.Item.UpdateOneID(in.ID).SetDeletedAt(time.Now().UTC()).Exec(ctx); err != nil {
+			return nil, fmt.Errorf("deleting item: %w", err)
+		}
+		return nil, nil
+	})
+
+	huma.Register(api, huma.Operation{
 		OperationID: "mark-item-sold",
 		Method:      http.MethodPost,
 		Path:        "/admin/items/{id}/sold",

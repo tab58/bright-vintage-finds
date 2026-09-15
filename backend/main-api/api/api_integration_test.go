@@ -16,6 +16,7 @@ import (
 
 	db_platform "main-api/db"
 	"main-api/db/generated/item"
+	"main-api/db/generated/itemimage"
 	"main-api/db/generated/label"
 	"main-api/db/generated/sellingplace"
 
@@ -225,6 +226,7 @@ func TestEnsureOwnerIdempotent(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, users, 1, "exactly one owner row must exist")
 }
+
 // Empty strings from the PWA mean "clear this field": they must land as NULL,
 // not "", because whatnot_number is unique when present.
 func TestClearFieldsWithEmptyString(t *testing.T) {
@@ -479,7 +481,10 @@ func TestFirstListedAtSurvivesRelist(t *testing.T) {
 
 // stubStore is a minimal aws_s3.Client: only presigning matters here, and a
 // local stub avoids pulling gomock into this module for one call.
-type stubStore struct{ url string }
+type stubStore struct {
+	url     string
+	deleted *[]string
+}
 
 func (s stubStore) UploadFile(context.Context, string, string, io.Reader) error { return nil }
 func (s stubStore) UploadFileWithMetadata(context.Context, string, string, io.Reader, map[string]string) error {
@@ -488,7 +493,12 @@ func (s stubStore) UploadFileWithMetadata(context.Context, string, string, io.Re
 func (s stubStore) DownloadFile(context.Context, string, string) (io.ReadCloser, error) {
 	return nil, nil
 }
-func (s stubStore) DeleteFile(context.Context, string, string) error         { return nil }
+func (s stubStore) DeleteFile(_ context.Context, _, key string) error {
+	if s.deleted != nil {
+		*s.deleted = append(*s.deleted, key)
+	}
+	return nil
+}
 func (s stubStore) FileExists(context.Context, string, string) (bool, error) { return true, nil }
 func (s stubStore) Ping(context.Context, string) error                       { return nil }
 func (s stubStore) PresignGetObject(_ context.Context, _, key string, _ time.Duration) (string, error) {
@@ -537,4 +547,59 @@ func TestListWithoutStorageHasNoCover(t *testing.T) {
 	created := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "no photos"}).Body.Bytes())
 	require.Nil(t, created.CoverImageURL)
 	require.Equal(t, 0, created.ImageCount)
+}
+
+// Drafts that never went out can be deleted outright; anything that reached
+// listed is part of the record and must be archived instead.
+func TestDeleteOnlyNeverListedDrafts(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	api := testAPI(t, client)
+
+	draft := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "mis-typed item"}).Body.Bytes())
+	require.Equal(t, 204, api.Delete("/admin/items/"+draft.ID).Code)
+
+	var remaining []ItemOutput
+	require.NoError(t, json.Unmarshal(api.Get("/admin/items").Body.Bytes(), &remaining))
+	require.Empty(t, remaining, "a deleted draft leaves the list")
+	require.Equal(t, 404, api.Get("/admin/items/"+draft.ID).Code)
+	require.Equal(t, 404, api.Delete("/admin/items/"+draft.ID).Code, "deleting twice is not found")
+
+	// listed, then unlisted: back in draft but no longer deletable
+	listed := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "real stock"}).Body.Bytes())
+	api.Patch("/admin/items/"+listed.ID, map[string]any{"name": listed.Name, "status": "listed"})
+	unlisted := decodeItem(t, api.Patch("/admin/items/"+listed.ID, map[string]any{
+		"name": listed.Name, "status": "draft",
+	}).Body.Bytes())
+	require.Equal(t, "draft", unlisted.Status)
+	require.NotNil(t, unlisted.FirstListedAt)
+	require.Equal(t, 409, api.Delete("/admin/items/"+listed.ID).Code)
+}
+
+// Deleting a draft takes its pictures with it: the stored objects are removed,
+// not just the rows, so the bucket does not fill with orphans.
+func TestDeleteDraftRemovesImages(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	ctx := context.Background()
+	gen := client.GetDBFromContext(ctx)
+
+	var deleted []string
+	deps := &AppDeps{DB: client, Store: stubStore{url: "https://storage.example", deleted: &deleted}, S3UploadBucket: "bucket"}
+	_, api := humatest.New(t, huma.DefaultConfig("test", "1.0.0"))
+	registerItemCRUD(api, deps)
+
+	created := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "junk intake"}).Body.Bytes())
+	for _, key := range []string{"items/a.jpg", "items/b.jpg"} {
+		_, err := gen.ItemImage.Create().
+			SetItemID(created.ID).SetUploadBucket("bucket").SetUploadKey(key).SetDisplayOrder(0).Save(ctx)
+		require.NoError(t, err)
+	}
+
+	require.Equal(t, 204, api.Delete("/admin/items/"+created.ID).Code)
+	require.ElementsMatch(t, []string{"items/a.jpg", "items/b.jpg"}, deleted, "both objects removed from storage")
+
+	rows, err := gen.ItemImage.Query().Where(itemimage.HasItemWith(item.ID(created.ID))).Count(ctx)
+	require.NoError(t, err)
+	require.Zero(t, rows, "image rows go with the objects")
 }
