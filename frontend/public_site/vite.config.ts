@@ -10,7 +10,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      // autoUpdate, not prompt: a stale service worker once served an old
+      // env.js (with the pre-proxy BACKEND_API) long after a deploy, sending
+      // every /admin call cross-origin into the Access login redirect.
+      registerType: 'autoUpdate',
       devOptions: { enabled: false },
       manifest: {
         name: 'Bright Vintage Finds — Inventory',
@@ -24,8 +27,16 @@ export default defineConfig({
       workbox: {
         // Installable app shell only; API responses are never cached.
         navigateFallback: '/index.html',
+        // The shell must not answer for the API or for Cloudflare Access's
+        // same-origin callback, or login round-trips land on index.html.
+        navigateFallbackDenylist: [/^\/admin/, /^\/cdn-cgi/],
+        // env.js is runtime config, not a build asset: precaching it pins
+        // BACKEND_API to whatever it was at build time.
+        globIgnores: ['**/env.js'],
         runtimeCaching: [],
         cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
       },
     }),
   ],

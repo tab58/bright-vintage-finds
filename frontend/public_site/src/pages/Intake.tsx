@@ -23,6 +23,9 @@ import {
   type SellingPlace,
 } from '../api/client'
 
+// Must match the contentType allow-list on POST /admin/items/{id}/images.
+const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/png,image/webp'
+
 export default function IntakePage() {
   const navigate = useNavigate()
 
@@ -106,7 +109,10 @@ export default function IntakePage() {
         try {
           uploaded.push(await uploadImage(item.id, file))
         } catch (e) {
-          setError(`Item saved, but a photo failed to upload: ${String(e)}`)
+          const msg = String(e).includes('422')
+            ? `Item saved, but "${file.name}" is not a JPEG, PNG or WebP — iPhone HEIC photos need converting first.`
+            : `Item saved, but a photo failed to upload: ${String(e)}`
+          setError(msg)
         }
       }
       void uploaded
@@ -217,7 +223,9 @@ export default function IntakePage() {
             <input
               ref={cameraInput}
               type="file"
-              accept="image/*"
+              // Not image/*: iOS hands over the original HEIC for that, which
+              // the API rejects (422). Naming the types makes it convert to JPEG.
+              accept={ACCEPTED_IMAGE_TYPES}
               capture="environment"
               hidden
               onChange={(e) => {
@@ -228,7 +236,7 @@ export default function IntakePage() {
             <input
               ref={libraryInput}
               type="file"
-              accept="image/*"
+              accept={ACCEPTED_IMAGE_TYPES}
               multiple
               hidden
               onChange={(e) => {
