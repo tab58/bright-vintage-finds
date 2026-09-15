@@ -27,6 +27,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
+          cache-dependency-path: ${{ inputs.service-path }}/go.sum
 
       - name: Run unit tests
         working-directory: ${{ inputs.service-path }}
