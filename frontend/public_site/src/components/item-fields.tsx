@@ -1,27 +1,27 @@
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import type { Item, ItemBody } from '../api/client'
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import type { Item, ItemBody } from '../api/client';
 
 // The item form, shared by intake and the item detail page so both show the
 // same fields in the same order. Values are kept as strings, the way the
 // inputs hand them over; conversion happens in fieldsToBody.
 export type ItemFields = {
-  name: string
-  cost: string
-  purchasedAt: string
-  length: string
-  width: string
-  height: string
-  unit: 'inch' | 'cm'
-  extraMeasurements: string
-  weightLbs: string
-  weightOz: string
-  notes: string
-  whatnot: string
-}
+  name: string;
+  cost: string;
+  purchasedAt: string;
+  length: string;
+  width: string;
+  height: string;
+  unit: 'inch' | 'cm';
+  extraMeasurements: string;
+  weightLbs: string;
+  weightOz: string;
+  notes: string;
+  whatnot: string;
+};
 
 export const emptyFields: ItemFields = {
   name: '',
@@ -36,14 +36,17 @@ export const emptyFields: ItemFields = {
   weightOz: '',
   notes: '',
   whatnot: '',
-}
+};
 
-const num = (v?: number) => (v != null ? String(v) : '')
+const num = (v?: number) => (v != null ? String(v) : '');
 
 export function fieldsFromItem(it: Item): ItemFields {
   return {
     name: it.name,
-    cost: it.acquisition_cost_cents != null ? (it.acquisition_cost_cents / 100).toFixed(2) : '',
+    cost:
+      it.acquisition_cost_cents != null
+        ? (it.acquisition_cost_cents / 100).toFixed(2)
+        : '',
     purchasedAt: it.purchased_at?.slice(0, 10) ?? '',
     length: num(it.length),
     width: num(it.width),
@@ -54,7 +57,7 @@ export function fieldsFromItem(it: Item): ItemFields {
     weightOz: num(it.weight_oz),
     notes: it.notes ?? '',
     whatnot: it.whatnot_number ?? '',
-  }
+  };
 }
 
 // Text fields are sent even when empty: the API reads "" as "clear it".
@@ -62,8 +65,12 @@ export function fieldsFromItem(it: Item): ItemFields {
 export function fieldsToBody(f: ItemFields): ItemBody {
   return {
     name: f.name.trim(),
-    acquisition_cost_cents: f.cost ? Math.round(parseFloat(f.cost) * 100) : undefined,
-    purchased_at: f.purchasedAt ? new Date(f.purchasedAt).toISOString() : undefined,
+    acquisition_cost_cents: f.cost
+      ? Math.round(parseFloat(f.cost) * 100)
+      : undefined,
+    purchased_at: f.purchasedAt
+      ? new Date(f.purchasedAt).toISOString()
+      : undefined,
     length: f.length ? parseFloat(f.length) : undefined,
     width: f.width ? parseFloat(f.width) : undefined,
     height: f.height ? parseFloat(f.height) : undefined,
@@ -73,20 +80,26 @@ export function fieldsToBody(f: ItemFields): ItemBody {
     weight_oz: f.weightOz ? parseFloat(f.weightOz) : undefined,
     notes: f.notes,
     whatnot_number: f.whatnot,
-  }
+  };
 }
 
 type Props = {
-  value: ItemFields
-  onChange: (next: ItemFields) => void
-  disabled?: boolean
+  value: ItemFields;
+  onChange: (next: ItemFields) => void;
+  disabled?: boolean;
   /** Prefix for input ids, so two forms can coexist on one page. */
-  idPrefix?: string
-}
+  idPrefix?: string;
+};
 
-export function ItemFieldCards({ value, onChange, disabled = false, idPrefix = 'f' }: Props) {
-  const set = <K extends keyof ItemFields>(key: K, v: ItemFields[K]) => onChange({ ...value, [key]: v })
-  const id = (name: string) => `${idPrefix}-${name}`
+export function ItemFieldCards({
+  value,
+  onChange,
+  disabled = false,
+  idPrefix = 'f',
+}: Props) {
+  const set = <K extends keyof ItemFields>(key: K, v: ItemFields[K]) =>
+    onChange({ ...value, [key]: v });
+  const id = (name: string) => `${idPrefix}-${name}`;
 
   return (
     <>
@@ -184,7 +197,10 @@ export function ItemFieldCards({ value, onChange, disabled = false, idPrefix = '
               ] as const
             ).map(([key, label]) => (
               <div key={key} className="space-y-1.5">
-                <Label htmlFor={id(key)} className="text-xs text-muted-foreground">
+                <Label
+                  htmlFor={id(key)}
+                  className="text-xs text-muted-foreground"
+                >
                   {label}
                 </Label>
                 <Input
@@ -214,7 +230,10 @@ export function ItemFieldCards({ value, onChange, disabled = false, idPrefix = '
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor={id('lbs')} className="text-xs text-muted-foreground">
+              <Label
+                htmlFor={id('lbs')}
+                className="text-xs text-muted-foreground"
+              >
                 Weight (lbs)
               </Label>
               <Input
@@ -228,7 +247,10 @@ export function ItemFieldCards({ value, onChange, disabled = false, idPrefix = '
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={id('oz')} className="text-xs text-muted-foreground">
+              <Label
+                htmlFor={id('oz')}
+                className="text-xs text-muted-foreground"
+              >
                 Weight (oz)
               </Label>
               <Input
@@ -245,10 +267,15 @@ export function ItemFieldCards({ value, onChange, disabled = false, idPrefix = '
         </CardContent>
       </Card>
     </>
-  )
+  );
 }
 
-export function NotesCard({ value, onChange, disabled = false, idPrefix = 'f' }: Props) {
+export function NotesCard({
+  value,
+  onChange,
+  disabled = false,
+  idPrefix = 'f',
+}: Props) {
   return (
     <Card>
       <CardContent className="space-y-2">
@@ -263,7 +290,7 @@ export function NotesCard({ value, onChange, disabled = false, idPrefix = 'f' }:
         />
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // Read-only rendering of the same fields, for the item detail page: intake
@@ -274,15 +301,21 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="text-right text-[15px]">{value || '—'}</span>
     </div>
-  )
+  );
 }
 
 export function ItemSummaryCards({ value }: { value: ItemFields }) {
-  const dims = [value.length, value.width, value.height].filter(Boolean)
-  const size = dims.length > 0 ? `${dims.join(' × ')} ${value.unit === 'inch' ? 'in' : 'cm'}` : ''
-  const weight = [value.weightLbs && `${value.weightLbs} lb`, value.weightOz && `${value.weightOz} oz`]
+  const dims = [value.length, value.width, value.height].filter(Boolean);
+  const size =
+    dims.length > 0
+      ? `${dims.join(' × ')} ${value.unit === 'inch' ? 'in' : 'cm'}`
+      : '';
+  const weight = [
+    value.weightLbs && `${value.weightLbs} lb`,
+    value.weightOz && `${value.weightOz} oz`,
+  ]
     .filter(Boolean)
-    .join(' ')
+    .join(' ');
 
   return (
     <Card>
@@ -294,5 +327,5 @@ export function ItemSummaryCards({ value }: { value: ItemFields }) {
         <Row label="Weight" value={weight} />
       </CardContent>
     </Card>
-  )
+  );
 }

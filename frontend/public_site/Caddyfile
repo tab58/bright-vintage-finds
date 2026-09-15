@@ -10,6 +10,11 @@ handle /admin/* {
 	reverse_proxy {$API_UPSTREAM:http://bright-vintage-finds.railway.internal:8080}
 }
 
+# The public shop front reads its catalog from the same API, unauthenticated.
+handle /public/* {
+	reverse_proxy {$API_UPSTREAM:http://bright-vintage-finds.railway.internal:8080}
+}
+
 # Runtime config: BACKEND_API is substituted from the environment when the
 # Caddyfile is parsed, so the same image works across environments. Empty in
 # production now that /admin is proxied here: the client falls back to a

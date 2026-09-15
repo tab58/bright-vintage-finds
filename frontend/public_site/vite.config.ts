@@ -1,10 +1,10 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
-// In dev, /admin and /env.js proxy to the local main-api (docker stack), so
-// the app is same-origin exactly like production behind Caddy.
+// In dev, /admin, /public and /env.js proxy to the local main-api (docker
+// stack), so the app is same-origin exactly like production behind Caddy.
 export default defineConfig({
   plugins: [
     react(),
@@ -29,7 +29,7 @@ export default defineConfig({
         navigateFallback: '/index.html',
         // The shell must not answer for the API or for Cloudflare Access's
         // same-origin callback, or login round-trips land on index.html.
-        navigateFallbackDenylist: [/^\/admin/, /^\/cdn-cgi/],
+        navigateFallbackDenylist: [/^\/admin/, /^\/public/, /^\/cdn-cgi/],
         // env.js is runtime config, not a build asset: precaching it pins
         // BACKEND_API to whatever it was at build time.
         globIgnores: ['**/env.js'],
@@ -47,7 +47,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/admin': 'http://localhost:3000',
+      '/public': 'http://localhost:3000',
       '/env.js': 'http://localhost:3000',
     },
   },
-})
+});

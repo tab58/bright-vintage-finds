@@ -112,3 +112,32 @@ lists and crashed the page on the next render.
 | integration | POST selling-place / label → 200 with a JSON body carrying id + name | the regression that broke every inline create |
 | integration | the created place is immediately usable as sold_place_id | Custom… in the mark-sold dialog depends on it |
 | contract/E2E | none yet | pending an E2E harness for the PWA |
+
+## Public catalog endpoints (`/public/items`, `/public/items/{id}/images`, `/public/filters`)
+
+**Status:** implemented
+
+Unauthenticated read-only projection of the inventory for the public shop front
+page. Only `status=listed`, non-deleted items are visible, and only public
+fields (name, description, category, condition, measurements, labels, listing
+price, photos). Acquisition cost, notes, Whatnot numbers, selling places, sold
+data and the internal S3 key/bucket are never in a public response. Paginated
+by KSUID cursor (`id < cursor`, newest first) because the catalog can grow;
+filters (`query`, `category`, `label`) are server-side for the same reason.
+`/public/filters` returns the category and label values present among listed
+items so the page can offer filters it cannot derive from a single page.
+
+| Level | Case | Why |
+|-------|------|-----|
+| integration | a listed item appears in `/public/items`; draft, sold and archived items do not | the visibility rule is the whole trust boundary |
+| integration | a soft-deleted listed item does not appear | soft delete must hide from the public too |
+| integration | the response omits acquisition cost, notes, whatnot number, selling places and sold fields | private business data must not leak through the public projection |
+| integration | `limit` caps the page and `next_cursor` walks to the following page with no repeats or gaps | pagination correctness is invisible in a single-page test |
+| integration | `next_cursor` is absent on the last page | the client's "load more" needs an end signal |
+| integration | `query`, `category` and `label` filter the result set | filters run server-side, so they are API behaviour, not client behaviour |
+| integration | cover URL present for an item with photos, absent without | the grid renders a placeholder when absent |
+| integration | `/public/items/{id}/images` returns ordered URLs for a listed item; 404 for a draft/sold/archived/unknown id | the lightbox must not be a back door to unlisted photos |
+| integration | the image response carries no upload_key / upload_bucket | internal storage layout is not public |
+| integration | `/public/filters` lists categories and labels from listed items only | a draft-only category must not advertise an empty filter |
+| unit | none | these are DB + storage round-trips; the api package has no unit-level harness |
+| contract/E2E | none yet | pending an E2E harness for the public site |

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -49,6 +49,21 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+}
+
+/* Warm shop-parlor palette for the public shop front (src/pages/Home.tsx and
+   src/components/shop/*). Kept separate from the shadcn tokens above so the
+   inventory PWA's theme is untouched. */
+@theme {
+  --color-parlor-paper: #f7f1e4;
+  --color-parlor-paper-dim: #efe6d3;
+  --color-parlor-ink: #2e2418;
+  --color-parlor-wood: #5a4432;
+  --color-parlor-muted: #8a7862;
+  --color-parlor-brass: #a9822f;
+  --color-parlor-rule: #d9cab0;
+  --font-display:
+    Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
 }
 
 @layer base {

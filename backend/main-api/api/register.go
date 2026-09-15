@@ -11,7 +11,8 @@ import (
 
 // NewServer constructs the HTTP server and registers the platform /healthz
 // route, which is always on the auth/logging skip list. When deps carries a
-// database client, the inventory admin routes are registered too.
+// database client, the inventory admin routes and the unauthenticated
+// /public catalog routes are registered too.
 func NewServer[A router.AuthInfo](cfg server.ServerConfig, builder router.AuthInfoBuilder[A], deps *AppDeps, opts ...server.ServerConfigOption) *server.Server[A] {
 	opts = append(opts, server.WithSkipPaths([]string{"/healthz"}))
 	srv := server.New(cfg, builder, opts...)
@@ -22,6 +23,7 @@ func NewServer[A router.AuthInfo](cfg server.ServerConfig, builder router.AuthIn
 		registerSellingPlaces(srv.API(), deps.DB)
 		registerLabels(srv.API(), deps.DB)
 		registerItemCRUD(srv.API(), deps)
+		registerPublicCatalog(srv.API(), deps)
 		if deps.Store != nil {
 			registerItemImageRoutes(srv.API(), deps)
 		}

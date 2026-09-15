@@ -1,17 +1,17 @@
 # syntax=docker/dockerfile:1
 
 # build stage — context is frontend/public_site
-FROM node:22-alpine AS builder
+FROM oven/bun:1-alpine AS builder
 
 ARG VERSION
 
 WORKDIR /build
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN bun run build
 
 # final image: Caddy serving the static build
 FROM caddy:2-alpine
