@@ -47,6 +47,9 @@ type ItemOutput struct {
 	SellingPlaceIDs []string `json:"selling_place_ids"`
 	LabelIDs        []string `json:"label_ids"`
 	ImageCount      int      `json:"image_count"`
+	// Presigned URL of the first image, so lists can show a thumbnail without
+	// a request per item. Absent when the item has no images or storage is off.
+	CoverImageURL *string `json:"cover_image_url,omitempty"`
 
 	// Set while the item is listed; cleared when it goes back to draft.
 	ListedAt *time.Time `json:"listed_at,omitempty"`
@@ -64,7 +67,7 @@ type ItemOutput struct {
 
 // itemOutput maps a loaded item (with edges eager-loaded by itemLoaded) to
 // its API representation.
-func itemOutput(ctx context.Context, db *db_platform.Client, it *generated.Item) (*ItemOutput, error) {
+func itemOutput(ctx context.Context, deps *AppDeps, it *generated.Item) (*ItemOutput, error) {
 	out := &ItemOutput{
 		ID:                   it.ID,
 		Name:                 it.Name,
@@ -116,13 +119,21 @@ func itemOutput(ctx context.Context, db *db_platform.Client, it *generated.Item)
 		out.SoldPlaceID = &id
 	}
 
-	count, err := db.GetDBFromContext(ctx).ItemImage.Query().
+	images, err := deps.DB.GetDBFromContext(ctx).ItemImage.Query().
 		Where(itemimage.HasItemWith(item.ID(it.ID)), itemimage.DeletedAtIsNil()).
-		Count(ctx)
+		Order(generated.Asc(itemimage.FieldDisplayOrder)).
+		All(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("counting item images: %w", err)
+		return nil, fmt.Errorf("loading item images: %w", err)
 	}
-	out.ImageCount = count
+	out.ImageCount = len(images)
+	if len(images) > 0 && deps.Store != nil {
+		cover, err := imageOutputWithURL(ctx, deps, images[0])
+		if err != nil {
+			return nil, err
+		}
+		out.CoverImageURL = &cover.URL
+	}
 
 	return out, nil
 }
@@ -261,7 +272,8 @@ func applyItemClears(update *generated.ItemUpdateOne, body itemBody) *generated.
 
 // registerItemCRUD registers the item create/list/get/update and mark-sold
 // routes.
-func registerItemCRUD(api huma.API, db *db_platform.Client) {
+func registerItemCRUD(api huma.API, deps *AppDeps) {
+	db := deps.DB
 	client := db.GetDBFromContext(nil)
 
 	huma.Register(api, huma.Operation{
@@ -337,7 +349,7 @@ func registerItemCRUD(api huma.API, db *db_platform.Client) {
 		if err != nil {
 			return nil, err
 		}
-		o, err := itemOutput(ctx, db, loaded)
+		o, err := itemOutput(ctx, deps, loaded)
 		if err != nil {
 			return nil, err
 		}
@@ -383,7 +395,7 @@ func registerItemCRUD(api huma.API, db *db_platform.Client) {
 		}
 		out := &listItemsOutput{Body: make([]*ItemOutput, 0, len(items))}
 		for _, it := range items {
-			o, err := itemOutput(ctx, db, it)
+			o, err := itemOutput(ctx, deps, it)
 			if err != nil {
 				return nil, err
 			}
@@ -405,7 +417,7 @@ func registerItemCRUD(api huma.API, db *db_platform.Client) {
 		if err != nil {
 			return nil, fmt.Errorf("loading item: %w", err)
 		}
-		o, err := itemOutput(ctx, db, loaded)
+		o, err := itemOutput(ctx, deps, loaded)
 		if err != nil {
 			return nil, err
 		}
@@ -529,7 +541,7 @@ func registerItemCRUD(api huma.API, db *db_platform.Client) {
 		if err != nil {
 			return nil, err
 		}
-		o, err := itemOutput(ctx, db, loaded)
+		o, err := itemOutput(ctx, deps, loaded)
 		if err != nil {
 			return nil, err
 		}
@@ -569,7 +581,7 @@ func registerItemCRUD(api huma.API, db *db_platform.Client) {
 		if err != nil {
 			return nil, err
 		}
-		o, err := itemOutput(ctx, db, loaded)
+		o, err := itemOutput(ctx, deps, loaded)
 		if err != nil {
 			return nil, err
 		}

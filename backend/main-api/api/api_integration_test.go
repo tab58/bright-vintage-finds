@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"testing"
 	"time"
@@ -28,7 +29,7 @@ import (
 func testAPI(t *testing.T, client *db_platform.Client) humatest.TestAPI {
 	t.Helper()
 	_, api := humatest.New(t, huma.DefaultConfig("test", "1.0.0"))
-	registerItemCRUD(api, client)
+	registerItemCRUD(api, &AppDeps{DB: client})
 	registerSellingPlaces(api, client)
 	registerLabels(api, client)
 	return api
@@ -474,4 +475,66 @@ func TestFirstListedAtSurvivesRelist(t *testing.T) {
 	relisted := patch("listed")
 	require.NotNil(t, relisted.ListedAt)
 	require.Equal(t, first.UnixNano(), relisted.FirstListedAt.UnixNano(), "first listing is written once")
+}
+
+// stubStore is a minimal aws_s3.Client: only presigning matters here, and a
+// local stub avoids pulling gomock into this module for one call.
+type stubStore struct{ url string }
+
+func (s stubStore) UploadFile(context.Context, string, string, io.Reader) error { return nil }
+func (s stubStore) UploadFileWithMetadata(context.Context, string, string, io.Reader, map[string]string) error {
+	return nil
+}
+func (s stubStore) DownloadFile(context.Context, string, string) (io.ReadCloser, error) {
+	return nil, nil
+}
+func (s stubStore) DeleteFile(context.Context, string, string) error         { return nil }
+func (s stubStore) FileExists(context.Context, string, string) (bool, error) { return true, nil }
+func (s stubStore) Ping(context.Context, string) error                       { return nil }
+func (s stubStore) PresignGetObject(_ context.Context, _, key string, _ time.Duration) (string, error) {
+	return s.url + "/" + key, nil
+}
+
+// The inventory list shows a thumbnail per item, so item rows carry a presigned
+// cover URL rather than the client fetching images row by row.
+func TestListCarriesCoverImageURL(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	ctx := context.Background()
+	gen := client.GetDBFromContext(ctx)
+
+	deps := &AppDeps{DB: client, Store: stubStore{url: "https://storage.example"}, S3UploadBucket: "bucket"}
+	_, api := humatest.New(t, huma.DefaultConfig("test", "1.0.0"))
+	registerItemCRUD(api, deps)
+
+	owner, err := ensureOwner(ctx, gen)
+	require.NoError(t, err)
+	it, err := gen.Item.Create().SetName("jadeite mug").SetOwnerID(owner).Save(ctx)
+	require.NoError(t, err)
+
+	// display_order decides the cover, not insertion order.
+	_, err = gen.ItemImage.Create().
+		SetItemID(it.ID).SetUploadBucket("bucket").SetUploadKey("items/second.jpg").SetDisplayOrder(1).Save(ctx)
+	require.NoError(t, err)
+	_, err = gen.ItemImage.Create().
+		SetItemID(it.ID).SetUploadBucket("bucket").SetUploadKey("items/cover.jpg").SetDisplayOrder(0).Save(ctx)
+	require.NoError(t, err)
+
+	var listed []ItemOutput
+	require.NoError(t, json.Unmarshal(api.Get("/admin/items").Body.Bytes(), &listed))
+	require.Len(t, listed, 1)
+	require.Equal(t, 2, listed[0].ImageCount)
+	require.NotNil(t, listed[0].CoverImageURL)
+	require.Equal(t, "https://storage.example/items/cover.jpg", *listed[0].CoverImageURL)
+}
+
+// Without object storage the list still works; it just has no thumbnails.
+func TestListWithoutStorageHasNoCover(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	api := testAPI(t, client)
+
+	created := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "no photos"}).Body.Bytes())
+	require.Nil(t, created.CoverImageURL)
+	require.Equal(t, 0, created.ImageCount)
 }

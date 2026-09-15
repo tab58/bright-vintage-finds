@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, ImageOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -215,10 +215,22 @@ function ItemRow({ item, onLongPress }: { item: Item; onLongPress: () => void })
         onPointerUp={cancel}
         onPointerLeave={cancel}
         onPointerCancel={cancel}
-        className="flex items-center justify-between px-1 py-2.5 text-foreground no-underline select-none"
+        className="flex items-center gap-3 px-1 py-2 text-foreground no-underline select-none"
       >
-        <span className="font-semibold">{item.name}</span>
-        <span className="text-[13px] text-muted-foreground">{meta(item).join(' · ')}</span>
+        {item.cover_image_url ? (
+          <img
+            src={item.cover_image_url}
+            alt=""
+            className="size-12 shrink-0 rounded-md border object-cover"
+          />
+        ) : (
+          // Keep the row aligned whether or not the item has photos yet.
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-md border border-dashed bg-muted/50 text-muted-foreground">
+            <ImageOff className="size-4" />
+          </span>
+        )}
+        <span className="min-w-0 flex-1 truncate font-semibold">{item.name}</span>
+        <span className="shrink-0 text-[13px] text-muted-foreground">{meta(item).join(' · ')}</span>
       </Link>
     </li>
   )

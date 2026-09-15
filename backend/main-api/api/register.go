@@ -21,7 +21,7 @@ func NewServer[A router.AuthInfo](cfg server.ServerConfig, builder router.AuthIn
 	if deps != nil && deps.DB != nil {
 		registerSellingPlaces(srv.API(), deps.DB)
 		registerLabels(srv.API(), deps.DB)
-		registerItemCRUD(srv.API(), deps.DB)
+		registerItemCRUD(srv.API(), deps)
 		if deps.Store != nil {
 			registerItemImageRoutes(srv.API(), deps)
 		}

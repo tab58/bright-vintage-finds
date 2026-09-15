@@ -78,6 +78,7 @@ export interface Item {
   selling_place_ids: string[]
   label_ids: string[]
   image_count: number
+  cover_image_url?: string
   listed_at?: string
   first_listed_at?: string
   sold_price_cents?: number
