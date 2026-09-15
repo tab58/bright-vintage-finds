@@ -88,7 +88,7 @@ the client.
 | integration | re-sending status=listed leaves listed_at unchanged | listing age must not reset on an unrelated save |
 | integration | PATCH status=draft clears listed_at | unlisting restarts the clock next time |
 | integration | first_listed_at is stamped on the first listing and survives unlist → relist | the list shows time-to-sale from the FIRST listing, which listed_at cannot answer |
-| integration | DELETE a never-listed draft soft-deletes it; DELETE after it has been listed → 409 | a mis-typed intake can be removed, but anything that reached the market stays in the record as archived |
+| integration | DELETE a never-listed draft or an archived item soft-deletes it; a listed item → 409 (archive first); a sold item → 409 always | a mis-typed intake goes straight out; anything that reached the market is archived first, and a sale is never deleted |
 | integration | DELETE removes the stored image objects and their rows | photos must not outlive the item they belonged to, or the bucket fills with orphans |
 | integration | PATCH status=archived from draft and from listed | both side exits |
 | integration | PATCH with an invalid status → 422 | enum validation is the only server-side guard |

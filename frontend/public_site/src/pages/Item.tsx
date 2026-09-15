@@ -170,9 +170,10 @@ export default function ItemPage() {
   // Photos stay editable while the item is still a draft; once listed it is
   // out in the world and the pictures are part of the listing.
   const canAddPhotos = item.status === 'draft'
-  // Never listed: the item never left the workbench, so it can just go away.
-  // Anything that reached listed is archived instead, and the API enforces it.
-  const canDelete = item.status === 'draft' && !item.first_listed_at
+  // Deletable: a draft that never went out, or anything already archived —
+  // archiving is the deliberate step before disposal. The API enforces it too.
+  const canDelete =
+    item.status === 'archived' || (item.status === 'draft' && !item.first_listed_at)
   const canList = checkedPlaces.size > 0
 
   function toggle(set: Set<string>, id: string, apply: (s: Set<string>) => void) {
@@ -504,13 +505,23 @@ export default function ItemPage() {
           )}
 
           {item.status === 'archived' && (
-            <Button
-              className="h-12 w-full text-[15px]"
-              disabled={busy}
-              onClick={() => setStatus('draft', 'Restore')}
-            >
-              <RotateCcw /> Restore to draft
-            </Button>
+            <>
+              <Button
+                className="h-12 w-full text-[15px]"
+                disabled={busy}
+                onClick={() => setStatus('draft', 'Restore')}
+              >
+                <RotateCcw /> Restore to draft
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-9 w-full text-destructive hover:text-destructive"
+                disabled={busy}
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 /> Delete item
+              </Button>
+            </>
           )}
 
           {item.status === 'sold' && (

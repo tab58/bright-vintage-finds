@@ -574,6 +574,22 @@ func TestDeleteOnlyNeverListedDrafts(t *testing.T) {
 	require.Equal(t, "draft", unlisted.Status)
 	require.NotNil(t, unlisted.FirstListedAt)
 	require.Equal(t, 409, api.Delete("/admin/items/"+listed.ID).Code)
+
+	// ...but archiving it is the deliberate step that makes disposal allowed.
+	api.Patch("/admin/items/"+listed.ID, map[string]any{"name": listed.Name, "status": "archived"})
+	require.Equal(t, 204, api.Delete("/admin/items/"+listed.ID).Code)
+
+	// A sale is never deleted, archived or not.
+	require.NoError(t, SeedBuiltinSellingPlaces(client))
+	var places []SellingPlaceOutput
+	require.NoError(t, json.Unmarshal(api.Get("/admin/selling-places").Body.Bytes(), &places))
+	sold := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "sold stock"}).Body.Bytes())
+	api.Post("/admin/items/"+sold.ID+"/sold", map[string]any{
+		"sold_at":          time.Now().UTC().Format(time.RFC3339),
+		"sold_price_cents": 1000,
+		"sold_place_id":    places[0].ID,
+	})
+	require.Equal(t, 409, api.Delete("/admin/items/"+sold.ID).Code)
 }
 
 // Deleting a draft takes its pictures with it: the stored objects are removed,

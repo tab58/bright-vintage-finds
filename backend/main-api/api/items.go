@@ -564,10 +564,17 @@ func registerItemCRUD(api huma.API, deps *AppDeps) {
 		if err != nil {
 			return nil, fmt.Errorf("loading item: %w", err)
 		}
-		// Once an item has been listed it is part of the sales record, even if
-		// it is back in draft: archiving keeps it, deleting would lose it.
-		if it.FirstListedAt != nil || it.Status != item.StatusDraft {
-			return nil, huma.Error409Conflict("this item has been listed; archive it instead of deleting")
+		// Deletable: a draft that never went out, or anything already archived
+		// (archive is the deliberate step before disposal). A live listing must
+		// be unlisted or archived first, and a sale is never deleted.
+		neverListed := it.Status == item.StatusDraft && it.FirstListedAt == nil
+		switch {
+		case it.Status == item.StatusArchived || neverListed:
+			// allowed
+		case it.Status == item.StatusSold:
+			return nil, huma.Error409Conflict("sold items are a record of the sale and cannot be deleted")
+		default:
+			return nil, huma.Error409Conflict("this item has been listed; archive it before deleting")
 		}
 
 		// The pictures go too: stored objects first, then their rows. Objects

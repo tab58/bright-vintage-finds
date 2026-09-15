@@ -280,8 +280,11 @@ function ItemActions({
   onDelete: (item: Item) => void
 }) {
   if (!item) return null
-  const neverListed = item.status === 'draft' && !item.first_listed_at
-  const moves = MOVES[item.status].filter((m) => !(neverListed && m.to === 'archived'))
+  // Same rule as the item page: never-listed drafts and archived items go,
+  // everything else has to be archived first (or is a sale, which stays).
+  const deletable =
+    item.status === 'archived' || (item.status === 'draft' && !item.first_listed_at)
+  const moves = MOVES[item.status].filter((m) => !(deletable && m.to === 'archived'))
   const canList = item.selling_place_ids.length > 0
 
   return (
@@ -305,7 +308,7 @@ function ItemActions({
               </Button>
             )
           })}
-          {neverListed && (
+          {deletable && (
             <Button
               variant="outline"
               className="h-11 w-full text-destructive hover:text-destructive"
