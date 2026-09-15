@@ -118,7 +118,6 @@ Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflare
 ## Known Drift / TODOs
 
 - `.env.development` is required by `task run` but is not checked in.
-- main-api v1.2.0 cannot boot in production: `S3_UPLOAD_BUCKET` is `$stocked-cube-vvxsqadtfydz` and the leading `$` makes the startup `HeadBucket` ping 404, so boot fails fast and Railway keeps serving v1.1.0 (healthz-only, so every `/admin` route 404s).
 - `MAIN_DB_URL` is required in production; optional in development (boots healthz-only without it).
 - The inventory PWA lives inside `public_site/` (route `/inventory*`); it deploys with the existing public-site pipeline. A browser/phone pass-through of the intake flow is still pending.
-- The same-origin `/admin` proxy needs matching production config, not yet applied: set `API_UPSTREAM` on the frontend service, clear `BACKEND_API` (empty = same-origin base in `src/api/client.ts`), and point the Cloudflare Access app at `brightvintagefinds.com/admin` + `/inventory`, updating the API's `CF_ACCESS_AUD` to the new app.
+- The same-origin `/admin` proxy is live (`API_UPSTREAM` set, `BACKEND_API` cleared), but no Cloudflare Access app covers `brightvintagefinds.com`, so requests reach main-api without a `Cf-Access-Jwt-Assertion` and the cfaccess guard 401s every `/admin` call. Add the hostnames `brightvintagefinds.com/admin` + `/inventory` to the Access app and set the API's `CF_ACCESS_AUD` to that app's AUD.
