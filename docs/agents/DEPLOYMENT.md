@@ -84,8 +84,10 @@ Two different ingress mechanisms, which is easy to get wrong:
   private domain `bright-vintage-finds.railway.internal:8080`. The API has no
   public Railway domain.
 
-`www` redirects to the apex via a Cloudflare redirect rule ("Redirect from WWW
-to root [Template]", 301). *(unverified this session)*
+`www` redirects to the apex via the zone's single active redirect rule,
+"Redirect from WWW to root [Template]": matches `URI Full wildcard
+r"https://www.*"` and issues a 301 to `wildcard_replace(http.request.full_uri,
+...)`. Zone → Rules → Overview (filtered to Redirect Rules).
 
 ---
 
