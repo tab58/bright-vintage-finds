@@ -38,7 +38,7 @@ Do **not** read these eagerly. Read them on demand when the task calls for the i
 │       ├── src/api/client.ts    # Typed fetch client for the /admin inventory API
 │       ├── src/assets/          # Splash page art
 │       ├── public/env.js        # Dev default for window.BACKEND_API (prod: Caddy injects it)
-│       ├── Caddyfile            # Serves dist/ on $PORT; /env.js exposes $BACKEND_API at runtime
+│       ├── Caddyfile            # Serves dist/ on $PORT; reverse-proxies /admin/* to $API_UPSTREAM; /env.js exposes $BACKEND_API at runtime
 │       ├── public_site.Dockerfile # npm build → caddy:2-alpine (build context = this dir)
 │       └── vite.config.ts       # StyleX + PWA (install-only) + dev proxy /admin → localhost:3000
 └── environment/
@@ -94,13 +94,13 @@ GitHub Actions (`.github/workflows/`), modeled on stack-prime, production-only (
 - **unit-tests.yml** — PRs to main touching `backend/main-api/**`: runs Go unit tests via reusable `_go-unit-tests.yml`.
 - **deploy.yml** — push to main: `dorny/paths-filter` detects which service changed, then per service: semantic-release (`_go-release-docker.yml` — release + Docker steps only, nothing Go-specific despite the name) → image to GHCR → deploy to Railway production (`_deploy-railway.yml` + `scripts/railway-deploy.sh`). Deploy only fires when a new release is published.
   - **main-api** (`backend/main-api/**`): unit tests first, tag `main-api/v<version>`, image `ghcr.io/tab58/main-api`, `.releaserc.json` in the service dir.
-  - **public-site** (`frontend/public_site/**`): no test suite, tag `public-site/v<version>`, image `ghcr.io/tab58/public-site` (`public_site.Dockerfile`: npm build → Caddy serving `dist/`; `Caddyfile` reads `PORT` and serves `/env.js` with the `BACKEND_API` env var injected at runtime — Railway sets both).
+  - **public-site** (`frontend/public_site/**`): no test suite, tag `public-site/v<version>`, image `ghcr.io/tab58/public-site` (`public_site.Dockerfile`: npm build → Caddy serving `dist/`; `Caddyfile` reads `PORT`, reverse-proxies `/admin/*` to `API_UPSTREAM` (the API's Railway private domain), and serves `/env.js` with the `BACKEND_API` env var injected at runtime).
 - **main-api_migrate_db.yml** — manual (workflow_dispatch) Atlas migration apply against production DB (`MAIN_DB_URL` secret).
 - **ghcr-cleanup.yml** — nightly GHCR retention (currently `dry-run: true`).
 
 Required GitHub config: `production` environment with vars `RAILWAY_MAIN_API_SERVICE_ID`, `RAILWAY_MAIN_API_ENVIRONMENT_ID`, `RAILWAY_PUBLIC_SITE_SERVICE_ID`, `RAILWAY_PUBLIC_SITE_ENVIRONMENT_ID` and secrets `RAILWAY_API_TOKEN`, `MAIN_DB_URL`.
 
-Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflared service in the same Railway project) routes `api.brightvintagefinds.com` → the API's Railway private domain on port 8080. A Cloudflare Access app protects `api.brightvintagefinds.com/admin`; the service's `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` env vars match it, so the in-app cfaccess guard verifies the same tokens.
+Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflared service in the same Railway project) routes both hostnames to Railway private domains on port 8080. The inventory PWA and the admin API share the `brightvintagefinds.com` origin: Caddy reverse-proxies `/admin/*` to the API, so the Cloudflare Access cookie is first-party and no CORS preflight is involved. A Cloudflare Access app protects `brightvintagefinds.com/admin` (and `/inventory`); the API service's `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` env vars must match that app's AUD, so the in-app cfaccess guard verifies the same tokens. `api.brightvintagefinds.com` remains routed for direct API access.
 
 ## Code Generation
 
@@ -120,3 +120,4 @@ Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflare
 - `.env.development` is required by `task run` but is not checked in.
 - `MAIN_DB_URL` is required in production; optional in development (boots healthz-only without it).
 - The inventory PWA lives inside `public_site/` (route `/inventory*`); it deploys with the existing public-site pipeline. A browser/phone pass-through of the intake flow is still pending.
+- The same-origin `/admin` proxy needs matching production config, not yet applied: set `API_UPSTREAM` on the frontend service, clear `BACKEND_API` (empty = same-origin base in `src/api/client.ts`), and point the Cloudflare Access app at `brightvintagefinds.com/admin` + `/inventory`, updating the API's `CF_ACCESS_AUD` to the new app.

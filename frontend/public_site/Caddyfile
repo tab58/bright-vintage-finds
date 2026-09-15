@@ -3,8 +3,17 @@
 root * /srv
 encode gzip
 
+# The inventory PWA and the admin API are served from one origin so the
+# Cloudflare Access cookie is first-party and no CORS preflight is involved.
+# API_UPSTREAM is the API's Railway private domain (IPv6-only internal DNS).
+handle /admin/* {
+	reverse_proxy {$API_UPSTREAM:http://bright-vintage-finds.railway.internal:8080}
+}
+
 # Runtime config: BACKEND_API is substituted from the environment when the
-# Caddyfile is parsed, so the same image works across environments.
+# Caddyfile is parsed, so the same image works across environments. Empty in
+# production now that /admin is proxied here: the client falls back to a
+# same-origin base.
 handle /env.js {
 	header Content-Type "text/javascript; charset=utf-8"
 	respond `window.BACKEND_API = "{$BACKEND_API}";`
