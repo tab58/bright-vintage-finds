@@ -100,7 +100,7 @@ GitHub Actions (`.github/workflows/`), modeled on stack-prime, production-only (
 
 Required GitHub config: `production` environment with vars `RAILWAY_MAIN_API_SERVICE_ID`, `RAILWAY_MAIN_API_ENVIRONMENT_ID`, `RAILWAY_PUBLIC_SITE_SERVICE_ID`, `RAILWAY_PUBLIC_SITE_ENVIRONMENT_ID` and secrets `RAILWAY_API_TOKEN`, `MAIN_DB_URL`.
 
-Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflared service in the same Railway project) routes both hostnames to Railway private domains on port 8080. The inventory PWA and the admin API share the `brightvintagefinds.com` origin: Caddy reverse-proxies `/admin/*` to the API, so the Cloudflare Access cookie is first-party and no CORS preflight is involved. A Cloudflare Access app protects `brightvintagefinds.com/admin` (and `/inventory`); the API service's `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` env vars must match that app's AUD, so the in-app cfaccess guard verifies the same tokens. `api.brightvintagefinds.com` remains routed for direct API access.
+Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflared service in the same Railway project) routes both hostnames to Railway private domains on port 8080. The inventory PWA and the admin API share the `brightvintagefinds.com` origin: Caddy reverse-proxies `/admin/*` to the API, so the Cloudflare Access cookie is first-party and no CORS preflight is involved. The `main-api-admin` Access app protects three destinations — `api.brightvintagefinds.com/admin`, `brightvintagefinds.com/admin`, and `brightvintagefinds.com/inventory` — under one policy (`allow-owner`) and therefore one AUD, which the API's `CF_ACCESS_TEAM_DOMAIN`/`CF_ACCESS_AUD` match so the in-app cfaccess guard verifies the same tokens. The splash page at `/` stays public.
 
 ## Code Generation
 
@@ -120,4 +120,3 @@ Production ingress: no public Railway domain — a Cloudflare Tunnel (cloudflare
 - `.env.development` is required by `task run` but is not checked in.
 - `MAIN_DB_URL` is required in production; optional in development (boots healthz-only without it).
 - The inventory PWA lives inside `public_site/` (route `/inventory*`); it deploys with the existing public-site pipeline. A browser/phone pass-through of the intake flow is still pending.
-- The same-origin `/admin` proxy is live (`API_UPSTREAM` set, `BACKEND_API` cleared), but no Cloudflare Access app covers `brightvintagefinds.com`, so requests reach main-api without a `Cf-Access-Jwt-Assertion` and the cfaccess guard 401s every `/admin` call. Add the hostnames `brightvintagefinds.com/admin` + `/inventory` to the Access app and set the API's `CF_ACCESS_AUD` to that app's AUD.
