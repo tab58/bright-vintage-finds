@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import styleX from 'vite-plugin-stylex'
+import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // In dev, /admin and /env.js proxy to the local main-api (docker stack), so
@@ -8,7 +8,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   plugins: [
     react(),
-    styleX(),
+    tailwindcss(),
     VitePWA({
       registerType: 'prompt',
       devOptions: { enabled: false },
@@ -29,6 +29,10 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    // '/src' is root-relative, so no node:path / @types/node needed.
+    alias: { '@': '/src' },
+  },
   server: {
     proxy: {
       '/admin': 'http://localhost:3000',

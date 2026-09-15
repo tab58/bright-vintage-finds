@@ -33,6 +33,10 @@ const (
 	FieldCondition = "condition"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldListedAt holds the string denoting the listed_at field in the database.
+	FieldListedAt = "listed_at"
+	// FieldFirstListedAt holds the string denoting the first_listed_at field in the database.
+	FieldFirstListedAt = "first_listed_at"
 	// FieldAcquisitionCostCents holds the string denoting the acquisition_cost_cents field in the database.
 	FieldAcquisitionCostCents = "acquisition_cost_cents"
 	// FieldPurchasedAt holds the string denoting the purchased_at field in the database.
@@ -120,6 +124,8 @@ var Columns = []string{
 	FieldCategory,
 	FieldCondition,
 	FieldStatus,
+	FieldListedAt,
+	FieldFirstListedAt,
 	FieldAcquisitionCostCents,
 	FieldPurchasedAt,
 	FieldListingPriceCents,
@@ -287,6 +293,16 @@ func ByCondition(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByListedAt orders the results by the listed_at field.
+func ByListedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldListedAt, opts...).ToFunc()
+}
+
+// ByFirstListedAt orders the results by the first_listed_at field.
+func ByFirstListedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFirstListedAt, opts...).ToFunc()
 }
 
 // ByAcquisitionCostCents orders the results by the acquisition_cost_cents field.

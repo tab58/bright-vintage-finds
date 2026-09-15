@@ -1,4 +1,3 @@
-import * as stylex from '@stylexjs/stylex'
 import { Routes, Route } from 'react-router-dom'
 import textureBand from './assets/texture-band.png'
 import poster from './assets/card-bright.png'
@@ -20,77 +19,28 @@ export default function App() {
 // Splash is the public_site landing page, kept hardcoded as before.
 function Splash() {
   return (
-    <div {...stylex.props(styles.page)}>
+    <div className="flex min-h-screen flex-col bg-[#2e2418]">
       <div
-        {...stylex.props(styles.band)}
+        className="h-[70px] bg-[length:auto_100%] bg-repeat-x"
         style={{ backgroundImage: `url(${textureBand})` }}
       />
-      <main {...stylex.props(styles.center)}>
+      <main className="flex grow flex-col items-center justify-center px-6 py-12 text-center">
         <img
           src={poster}
           alt="Up 'n' Bright vintage poster art"
-          {...stylex.props(styles.poster)}
+          className="h-auto w-[min(300px,80vw)] -rotate-2 rounded-[10px] shadow-[0_12px_40px_rgba(0,0,0,0.6)]"
         />
-        <h1 {...stylex.props(styles.title)}>Bright Vintage Finds</h1>
-        <p {...stylex.props(styles.comingSoon)}>Full site coming soon</p>
+        <h1 className="mt-9 mb-0 font-serif text-[2.2rem] font-bold text-[#e8d9b8]">
+          Bright Vintage Finds
+        </h1>
+        <p className="mt-3 mb-0 text-[0.85rem] tracking-[0.14em] text-[#a3927c] uppercase">
+          Full site coming soon
+        </p>
       </main>
       <div
-        {...stylex.props(styles.band, styles.bandBottom)}
+        className="h-[70px] -scale-y-100 bg-[length:auto_100%] bg-repeat-x"
         style={{ backgroundImage: `url(${textureBand})` }}
       />
     </div>
   )
 }
-
-const styles = stylex.create({
-  page: {
-    minHeight: '100vh',
-    backgroundColor: '#2e2418',
-    display: 'flex',
-    flexDirection: 'column',
-    boxSizing: 'border-box',
-  },
-  band: {
-    height: '70px',
-    backgroundRepeat: 'repeat-x',
-    backgroundSize: 'auto 100%',
-  },
-  bandBottom: {
-    transform: 'scaleY(-1)',
-  },
-  center: {
-    flexGrow: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    paddingBlock: '48px',
-    paddingInline: '24px',
-  },
-  poster: {
-    width: 'min(300px, 80vw)',
-    height: 'auto',
-    borderRadius: '10px',
-    transform: 'rotate(-2deg)',
-    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.6)',
-  },
-  title: {
-    fontFamily: "Georgia, 'Times New Roman', serif",
-    fontSize: '2.2rem',
-    fontWeight: 700,
-    color: '#e8d9b8',
-    marginTop: '36px',
-    marginBottom: '0',
-  },
-  comingSoon: {
-    fontFamily:
-      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    fontSize: '0.85rem',
-    letterSpacing: '0.14em',
-    textTransform: 'uppercase',
-    color: '#a3927c',
-    marginTop: '12px',
-    marginBottom: '0',
-  },
-})

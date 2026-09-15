@@ -30,6 +30,12 @@ func labelOutput(l *generated.Label) *LabelOutput {
 	}
 }
 
+// getLabelOutput wraps a single label for the same reason as places: a
+// response struct without a Body field becomes a 204 with header fields.
+type getLabelOutput struct {
+	Body *LabelOutput `json:"body"`
+}
+
 type listLabelsOutput struct {
 	Body []*LabelOutput `json:"body"`
 }
@@ -73,7 +79,7 @@ func registerLabels(api huma.API, db *db_platform.Client) {
 		Method:      http.MethodPost,
 		Path:        "/admin/labels",
 		Summary:     "Add an item-type label",
-	}, func(ctx context.Context, in *createLabelInput) (*LabelOutput, error) {
+	}, func(ctx context.Context, in *createLabelInput) (*getLabelOutput, error) {
 		l, err := client.Label.Create().
 			SetName(in.Body.Name).
 			Save(ctx)
@@ -83,7 +89,7 @@ func registerLabels(api huma.API, db *db_platform.Client) {
 			}
 			return nil, fmt.Errorf("creating label: %w", err)
 		}
-		return labelOutput(l), nil
+		return &getLabelOutput{Body: labelOutput(l)}, nil
 	})
 
 	huma.Register(api, huma.Operation{

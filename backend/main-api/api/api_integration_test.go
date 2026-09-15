@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -17,8 +18,29 @@ import (
 	"main-api/db/generated/label"
 	"main-api/db/generated/sellingplace"
 
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/stretchr/testify/require"
 )
+
+// testAPI wires the real item routes onto huma's test adapter, so status
+// transitions are exercised through the handlers the PWA calls.
+func testAPI(t *testing.T, client *db_platform.Client) humatest.TestAPI {
+	t.Helper()
+	_, api := humatest.New(t, huma.DefaultConfig("test", "1.0.0"))
+	registerItemCRUD(api, client)
+	registerSellingPlaces(api, client)
+	registerLabels(api, client)
+	return api
+}
+
+// decodeItem reads an ItemOutput out of a recorded response body.
+func decodeItem(t *testing.T, body []byte) ItemOutput {
+	t.Helper()
+	var out ItemOutput
+	require.NoError(t, json.Unmarshal(body, &out))
+	return out
+}
 
 const localDBURL = "postgres://postgres:postgres@localhost:5432/maindb?sslmode=disable"
 
@@ -201,4 +223,255 @@ func TestEnsureOwnerIdempotent(t *testing.T) {
 	users, err := gen.User.Query().All(ctx)
 	require.NoError(t, err)
 	require.Len(t, users, 1, "exactly one owner row must exist")
+}
+// Empty strings from the PWA mean "clear this field": they must land as NULL,
+// not "", because whatnot_number is unique when present.
+func TestClearFieldsWithEmptyString(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	ctx := context.Background()
+	gen := client.GetDBFromContext(ctx)
+
+	owner, err := ensureOwner(ctx, gen)
+	require.NoError(t, err)
+
+	made := make([]string, 0, 2)
+	for i, wn := range []string{"214", "215"} {
+		it, err := gen.Item.Create().
+			SetName(fmt.Sprintf("bowl %d", i)).
+			SetOwnerID(owner).
+			SetNotes("chip on rim").
+			SetWhatnotNumber(wn).
+			Save(ctx)
+		require.NoError(t, err)
+		made = append(made, it.ID)
+	}
+
+	for _, id := range made {
+		body := itemBody{Name: "bowl", Notes: ptr(""), WhatnotNumber: ptr("")}
+		updated, err := applyItemClears(gen.Item.UpdateOneID(id).
+			SetName(body.Name).
+			SetNillableNotes(omitEmpty(body.Notes)).
+			SetNillableWhatnotNumber(omitEmpty(body.WhatnotNumber)), body).
+			Save(ctx)
+		require.NoError(t, err, "clearing both items must not collide on whatnot_number")
+		require.Nil(t, updated.Notes)
+		require.Nil(t, updated.WhatnotNumber)
+	}
+
+	cleared, err := gen.Item.Query().Where(item.WhatnotNumberIsNil()).Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 2, cleared)
+}
+
+// The PWA drives the flow with PATCH status; listed_at times the current
+// listing. Transitions themselves are not guarded server-side by design.
+func TestItemStatusFlow(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	api := testAPI(t, client)
+
+	created := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "jadeite mug"}).Body.Bytes())
+	require.Equal(t, "draft", created.Status)
+	require.Nil(t, created.ListedAt)
+
+	// draft -> listed stamps listed_at
+	listed := decodeItem(t, api.Patch("/admin/items/"+created.ID, map[string]any{
+		"name": created.Name, "status": "listed",
+	}).Body.Bytes())
+	require.Equal(t, "listed", listed.Status)
+	require.NotNil(t, listed.ListedAt)
+
+	// re-sending the same status must not restart the listing clock
+	again := decodeItem(t, api.Patch("/admin/items/"+created.ID, map[string]any{
+		"name": created.Name, "status": "listed",
+	}).Body.Bytes())
+	require.NotNil(t, again.ListedAt)
+	require.Equal(t, listed.ListedAt.UnixNano(), again.ListedAt.UnixNano())
+
+	// unlist -> back to draft, listed_at cleared
+	unlisted := decodeItem(t, api.Patch("/admin/items/"+created.ID, map[string]any{
+		"name": created.Name, "status": "draft",
+	}).Body.Bytes())
+	require.Equal(t, "draft", unlisted.Status)
+	require.Nil(t, unlisted.ListedAt)
+
+	// archive from draft, then restore
+	archived := decodeItem(t, api.Patch("/admin/items/"+created.ID, map[string]any{
+		"name": created.Name, "status": "archived",
+	}).Body.Bytes())
+	require.Equal(t, "archived", archived.Status)
+	restored := decodeItem(t, api.Patch("/admin/items/"+created.ID, map[string]any{
+		"name": created.Name, "status": "draft",
+	}).Body.Bytes())
+	require.Equal(t, "draft", restored.Status)
+
+	// archive from listed too
+	api.Patch("/admin/items/"+created.ID, map[string]any{"name": created.Name, "status": "listed"})
+	fromListed := decodeItem(t, api.Patch("/admin/items/"+created.ID, map[string]any{
+		"name": created.Name, "status": "archived",
+	}).Body.Bytes())
+	require.Equal(t, "archived", fromListed.Status)
+
+	// the one server-side guard: the status value itself
+	bad := api.Patch("/admin/items/"+created.ID, map[string]any{"name": created.Name, "status": "nonsense"})
+	require.Equal(t, 422, bad.Code)
+}
+
+// A mis-keyed sale must be fixable without reopening the item.
+func TestSaleCorrections(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	api := testAPI(t, client)
+	require.NoError(t, SeedBuiltinSellingPlaces(client))
+
+	var places []SellingPlaceOutput
+	require.NoError(t, json.Unmarshal(api.Get("/admin/selling-places").Body.Bytes(), &places))
+	require.NotEmpty(t, places)
+	first, second := places[0], places[1]
+
+	created := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "camp blanket"}).Body.Bytes())
+	sold := decodeItem(t, api.Post("/admin/items/"+created.ID+"/sold", map[string]any{
+		"sold_at":          time.Now().UTC().Format(time.RFC3339),
+		"sold_price_cents": 4500,
+		"sold_place_id":    first.ID,
+	}).Body.Bytes())
+	require.Equal(t, "sold", sold.Status)
+	require.Equal(t, int64(4500), *sold.SoldPriceCents)
+
+	fixed := decodeItem(t, api.Patch("/admin/items/"+created.ID, map[string]any{
+		"name":             created.Name,
+		"sold_price_cents": 5200,
+		"sold_place_id":    second.ID,
+	}).Body.Bytes())
+	require.Equal(t, int64(5200), *fixed.SoldPriceCents)
+	require.Equal(t, second.ID, *fixed.SoldPlaceID)
+	require.Equal(t, "sold", fixed.Status, "correcting a sale must not change the status")
+
+	unknown := api.Patch("/admin/items/"+created.ID, map[string]any{
+		"name": created.Name, "sold_place_id": "does-not-exist",
+	})
+	require.Equal(t, 400, unknown.Code)
+}
+
+// Huma answers 204 with header fields when a response struct has no Body, which
+// silently gave the PWA an undefined place/label after every create.
+func TestCreateReturnsJSONBody(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	api := testAPI(t, client)
+
+	place := api.Post("/admin/selling-places", map[string]any{"name": "Pickup"})
+	require.Equal(t, 200, place.Code)
+	var createdPlace SellingPlaceOutput
+	require.NoError(t, json.Unmarshal(place.Body.Bytes(), &createdPlace))
+	require.NotEmpty(t, createdPlace.ID)
+	require.Equal(t, "Pickup", createdPlace.Name)
+
+	label := api.Post("/admin/labels", map[string]any{"name": "Glassware"})
+	require.Equal(t, 200, label.Code)
+	var createdLabel LabelOutput
+	require.NoError(t, json.Unmarshal(label.Body.Bytes(), &createdLabel))
+	require.NotEmpty(t, createdLabel.ID)
+	require.Equal(t, "Glassware", createdLabel.Name)
+
+	// The created place is usable straight away as a sale destination.
+	item := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "hobnail vase"}).Body.Bytes())
+	sold := decodeItem(t, api.Post("/admin/items/"+item.ID+"/sold", map[string]any{
+		"sold_at":          time.Now().UTC().Format(time.RFC3339),
+		"sold_price_cents": 2400,
+		"sold_place_id":    createdPlace.ID,
+	}).Body.Bytes())
+	require.Equal(t, "sold", sold.Status)
+	require.Equal(t, "Pickup", *sold.SoldPlace)
+}
+
+// Sold is the one status that carries data: an item cannot be sold nowhere,
+// or the sales-by-platform numbers quietly lose rows.
+func TestSoldRequiresPlace(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	api := testAPI(t, client)
+	require.NoError(t, SeedBuiltinSellingPlaces(client))
+
+	var places []SellingPlaceOutput
+	require.NoError(t, json.Unmarshal(api.Get("/admin/selling-places").Body.Bytes(), &places))
+	place := places[0]
+
+	created := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "hobnail vase"}).Body.Bytes())
+
+	// no place anywhere: refused
+	bare := api.Patch("/admin/items/"+created.ID, map[string]any{"name": created.Name, "status": "sold"})
+	require.Equal(t, 400, bare.Code)
+
+	// place in the same payload: allowed
+	sold := decodeItem(t, api.Patch("/admin/items/"+created.ID, map[string]any{
+		"name": created.Name, "status": "sold", "sold_place_id": place.ID,
+	}).Body.Bytes())
+	require.Equal(t, "sold", sold.Status)
+	require.Equal(t, place.ID, *sold.SoldPlaceID)
+
+	// place already on the row: re-sending sold is fine
+	again := api.Patch("/admin/items/"+created.ID, map[string]any{"name": created.Name, "status": "sold"})
+	require.Equal(t, 200, again.Code)
+
+	// and it cannot be created sold without one either
+	badCreate := api.Post("/admin/items", map[string]any{"name": "born sold", "status": "sold"})
+	require.Equal(t, 400, badCreate.Code)
+}
+
+// The sold_place FK is RESTRICT: a place with sales against it cannot be
+// hard-deleted, so past sales can never lose the platform they sold on.
+func TestSoldPlaceCannotBeHardDeleted(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	api := testAPI(t, client)
+	require.NoError(t, SeedBuiltinSellingPlaces(client))
+
+	var places []SellingPlaceOutput
+	require.NoError(t, json.Unmarshal(api.Get("/admin/selling-places").Body.Bytes(), &places))
+	place := places[0]
+
+	item := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "copper mould"}).Body.Bytes())
+	sold := decodeItem(t, api.Post("/admin/items/"+item.ID+"/sold", map[string]any{
+		"sold_at":          time.Now().UTC().Format(time.RFC3339),
+		"sold_price_cents": 2400,
+		"sold_place_id":    place.ID,
+	}).Body.Bytes())
+	require.Equal(t, place.ID, *sold.SoldPlaceID)
+
+	_, err := client.Raw().Exec(`DELETE FROM selling_places WHERE id = $1`, place.ID)
+	require.Error(t, err, "deleting a place with sales must be refused by the FK")
+
+	// The API's soft delete still works and leaves the sale intact.
+	require.Equal(t, 204, api.Delete("/admin/selling-places/"+place.ID).Code)
+	after := decodeItem(t, api.Get("/admin/items/"+item.ID).Body.Bytes())
+	require.Equal(t, place.ID, *after.SoldPlaceID)
+}
+
+// first_listed_at answers "how long from listing to sale", so it must survive
+// an unlist/relist cycle that resets listed_at.
+func TestFirstListedAtSurvivesRelist(t *testing.T) {
+	client := testDB(t)
+	truncate(t, client)
+	api := testAPI(t, client)
+
+	created := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "camp blanket"}).Body.Bytes())
+	patch := func(status string) ItemOutput {
+		return decodeItem(t, api.Patch("/admin/items/"+created.ID, map[string]any{
+			"name": created.Name, "status": status,
+		}).Body.Bytes())
+	}
+
+	listed := patch("listed")
+	require.NotNil(t, listed.FirstListedAt)
+	first := *listed.FirstListedAt
+
+	unlisted := patch("draft")
+	require.Nil(t, unlisted.ListedAt, "unlisting clears the current listing")
+	require.NotNil(t, unlisted.FirstListedAt, "but not the first one")
+
+	relisted := patch("listed")
+	require.NotNil(t, relisted.ListedAt)
+	require.Equal(t, first.UnixNano(), relisted.FirstListedAt.UnixNano(), "first listing is written once")
 }

@@ -65,4 +65,48 @@ managed lists for selling places (6 seeded builtins) and labels.
 | unit | builtin selling-place seed is idempotent (re-run → no duplicates; deleted builtin is NOT resurrected) | boot seed correctness |
 | integration | item + images round-trip against floci: upload via API → FileExists in bucket → ItemImage rows ordered by display_order | first upload feature (was deferred in the storage entry above) |
 | integration | full flow: create place → create labeled/placed item → search finds it → mark sold → sold fields set | vertical slice |
+| unit | item update with `notes: ""` / `whatnot_number: ""` clears the field to NULL | the PWA clears a field by sending an empty string |
+| unit | two items both cleared to empty whatnot_number → no unique violation | cleared values must be NULL, not "", or the partial unique index collides |
 | contract/E2E | none yet | frontend inventory client ships in Phase 3 |
+
+## Item status flow (draft → listed → sold, archived side exit)
+
+**Status:** implemented
+
+Intake creates items as `draft`. The PWA moves them with `PATCH /admin/items/{id}`
+carrying `status`: draft→listed (requires ≥1 selling place, enforced client-side),
+listed→draft (unlist), draft/listed→archived, archived→draft (restore).
+`listed_at` stamps the current listing and is cleared on unlist; `first_listed_at` is written once on the first listing and never cleared, so the inventory list can show time from listing to sale. Selling goes
+through `POST /admin/items/{id}/sold`; afterwards `sold_price_cents` / `sold_at` /
+`sold_place_id` stay patchable so a mis-keyed sale can be corrected. The API
+validates the status value but does not guard transitions — the flow lives in
+the client.
+
+| Level | Case | Why |
+|-------|------|-----|
+| integration | PATCH status=listed on a draft sets status + stamps listed_at | the core transition |
+| integration | re-sending status=listed leaves listed_at unchanged | listing age must not reset on an unrelated save |
+| integration | PATCH status=draft clears listed_at | unlisting restarts the clock next time |
+| integration | first_listed_at is stamped on the first listing and survives unlist → relist | the list shows time-to-sale from the FIRST listing, which listed_at cannot answer |
+| integration | PATCH status=archived from draft and from listed | both side exits |
+| integration | PATCH with an invalid status → 422 | enum validation is the only server-side guard |
+| integration | PATCH sold_price_cents/sold_at/sold_place_id on a sold item updates the sale; unknown place → 400 | sale corrections without reopening the item |
+| integration | PATCH status=sold with no sold_place_id (payload or row) → 400; with one → sold; create with status=sold and no place → 400 | a sold item must name where it sold, or sales-by-platform loses rows |
+| integration | hard-deleting a place with sales against it → FK error; the API's soft delete still works and leaves the sale intact | sold_place is RESTRICT, so a sale can never be orphaned by removing a place |
+| unit | none | these are DB round-trips; the API package has no unit-level harness |
+
+## Create responses carry a JSON body (`/admin/selling-places`, `/admin/labels`)
+
+**Status:** implemented
+
+Huma emits 204 with the struct's fields as HTTP headers when a response struct
+has no `Body` field (the convention noted in the root `AGENTS.md`). Both create
+handlers returned the bare output struct, so the PWA's "Add place…" / "Add
+label…" rows and the mark-sold Custom… option pushed `undefined` into their
+lists and crashed the page on the next render.
+
+| Level | Case | Why |
+|-------|------|-----|
+| integration | POST selling-place / label → 200 with a JSON body carrying id + name | the regression that broke every inline create |
+| integration | the created place is immediately usable as sold_place_id | Custom… in the mark-sold dialog depends on it |
+| contract/E2E | none yet | pending an E2E harness for the PWA |

@@ -4,6 +4,7 @@ import (
 	"main-api/db/schema/mixin"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
@@ -45,6 +46,15 @@ func (Item) Fields() []ent.Field {
 		field.Enum("status").
 			Values(ItemStatusDraft, ItemStatusListed, ItemStatusSold, ItemStatusArchived).
 			Default(ItemStatusDraft),
+		// Set when the item moves draft -> listed; cleared when it is unlisted.
+		field.Time("listed_at").
+			Optional().
+			Nillable(),
+		// Stamped the first time the item is ever listed and never cleared, so
+		// "how long from listing to sale" survives an unlist/relist.
+		field.Time("first_listed_at").
+			Optional().
+			Nillable(),
 		field.Int64("acquisition_cost_cents").
 			Optional().
 			Nillable(),
@@ -120,8 +130,12 @@ func (Item) Edges() []ent.Edge {
 		edge.To("labels", Label.Type),
 
 		// The platform where the item sold, set together with the sold fields.
+		// RESTRICT, not SET NULL: a sold item must keep naming where it sold,
+		// so a place with sales against it cannot be hard-deleted (the API
+		// soft-deletes places anyway).
 		edge.To("sold_place", SellingPlace.Type).
 			Unique().
-			Field("sold_place_id"),
+			Field("sold_place_id").
+			Annotations(entsql.OnDelete(entsql.Restrict)),
 	}
 }

@@ -167,6 +167,46 @@ func (_u *ItemUpdate) SetNillableStatus(v *item.Status) *ItemUpdate {
 	return _u
 }
 
+// SetListedAt sets the "listed_at" field.
+func (_u *ItemUpdate) SetListedAt(v time.Time) *ItemUpdate {
+	_u.mutation.SetListedAt(v)
+	return _u
+}
+
+// SetNillableListedAt sets the "listed_at" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableListedAt(v *time.Time) *ItemUpdate {
+	if v != nil {
+		_u.SetListedAt(*v)
+	}
+	return _u
+}
+
+// ClearListedAt clears the value of the "listed_at" field.
+func (_u *ItemUpdate) ClearListedAt() *ItemUpdate {
+	_u.mutation.ClearListedAt()
+	return _u
+}
+
+// SetFirstListedAt sets the "first_listed_at" field.
+func (_u *ItemUpdate) SetFirstListedAt(v time.Time) *ItemUpdate {
+	_u.mutation.SetFirstListedAt(v)
+	return _u
+}
+
+// SetNillableFirstListedAt sets the "first_listed_at" field if the given value is not nil.
+func (_u *ItemUpdate) SetNillableFirstListedAt(v *time.Time) *ItemUpdate {
+	if v != nil {
+		_u.SetFirstListedAt(*v)
+	}
+	return _u
+}
+
+// ClearFirstListedAt clears the value of the "first_listed_at" field.
+func (_u *ItemUpdate) ClearFirstListedAt() *ItemUpdate {
+	_u.mutation.ClearFirstListedAt()
+	return _u
+}
+
 // SetAcquisitionCostCents sets the "acquisition_cost_cents" field.
 func (_u *ItemUpdate) SetAcquisitionCostCents(v int64) *ItemUpdate {
 	_u.mutation.ResetAcquisitionCostCents()
@@ -768,6 +808,18 @@ func (_u *ItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(item.FieldStatus, field.TypeEnum, value)
 	}
+	if value, ok := _u.mutation.ListedAt(); ok {
+		_spec.SetField(item.FieldListedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ListedAtCleared() {
+		_spec.ClearField(item.FieldListedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.FirstListedAt(); ok {
+		_spec.SetField(item.FieldFirstListedAt, field.TypeTime, value)
+	}
+	if _u.mutation.FirstListedAtCleared() {
+		_spec.ClearField(item.FieldFirstListedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.AcquisitionCostCents(); ok {
 		_spec.SetField(item.FieldAcquisitionCostCents, field.TypeInt64, value)
 	}
@@ -1218,6 +1270,46 @@ func (_u *ItemUpdateOne) SetNillableStatus(v *item.Status) *ItemUpdateOne {
 	if v != nil {
 		_u.SetStatus(*v)
 	}
+	return _u
+}
+
+// SetListedAt sets the "listed_at" field.
+func (_u *ItemUpdateOne) SetListedAt(v time.Time) *ItemUpdateOne {
+	_u.mutation.SetListedAt(v)
+	return _u
+}
+
+// SetNillableListedAt sets the "listed_at" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableListedAt(v *time.Time) *ItemUpdateOne {
+	if v != nil {
+		_u.SetListedAt(*v)
+	}
+	return _u
+}
+
+// ClearListedAt clears the value of the "listed_at" field.
+func (_u *ItemUpdateOne) ClearListedAt() *ItemUpdateOne {
+	_u.mutation.ClearListedAt()
+	return _u
+}
+
+// SetFirstListedAt sets the "first_listed_at" field.
+func (_u *ItemUpdateOne) SetFirstListedAt(v time.Time) *ItemUpdateOne {
+	_u.mutation.SetFirstListedAt(v)
+	return _u
+}
+
+// SetNillableFirstListedAt sets the "first_listed_at" field if the given value is not nil.
+func (_u *ItemUpdateOne) SetNillableFirstListedAt(v *time.Time) *ItemUpdateOne {
+	if v != nil {
+		_u.SetFirstListedAt(*v)
+	}
+	return _u
+}
+
+// ClearFirstListedAt clears the value of the "first_listed_at" field.
+func (_u *ItemUpdateOne) ClearFirstListedAt() *ItemUpdateOne {
+	_u.mutation.ClearFirstListedAt()
 	return _u
 }
 
@@ -1851,6 +1943,18 @@ func (_u *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) {
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(item.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ListedAt(); ok {
+		_spec.SetField(item.FieldListedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ListedAtCleared() {
+		_spec.ClearField(item.FieldListedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.FirstListedAt(); ok {
+		_spec.SetField(item.FieldFirstListedAt, field.TypeTime, value)
+	}
+	if _u.mutation.FirstListedAtCleared() {
+		_spec.ClearField(item.FieldFirstListedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.AcquisitionCostCents(); ok {
 		_spec.SetField(item.FieldAcquisitionCostCents, field.TypeInt64, value)

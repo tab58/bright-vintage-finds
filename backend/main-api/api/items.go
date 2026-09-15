@@ -43,11 +43,20 @@ type ItemOutput struct {
 
 	SellingPlaces []string `json:"selling_places"` // names
 	Labels        []string `json:"labels"`         // names
-	ImageCount    int      `json:"image_count"`
+	// IDs alongside the names: the PWA edits these lists as checkboxes.
+	SellingPlaceIDs []string `json:"selling_place_ids"`
+	LabelIDs        []string `json:"label_ids"`
+	ImageCount      int      `json:"image_count"`
+
+	// Set while the item is listed; cleared when it goes back to draft.
+	ListedAt *time.Time `json:"listed_at,omitempty"`
+	// First time the item was ever listed; never cleared.
+	FirstListedAt *time.Time `json:"first_listed_at,omitempty"`
 
 	SoldPriceCents *int64     `json:"sold_price_cents,omitempty"`
 	SoldAt         *time.Time `json:"sold_at,omitempty"`
 	SoldPlace      *string    `json:"sold_place,omitempty"`
+	SoldPlaceID    *string    `json:"sold_place_id,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -77,21 +86,34 @@ func itemOutput(ctx context.Context, db *db_platform.Client, it *generated.Item)
 		WhatnotNumber:        it.WhatnotNumber,
 		SoldPriceCents:       it.SoldPriceCents,
 		SoldAt:               it.SoldAt,
+		ListedAt:             it.ListedAt,
+		FirstListedAt:        it.FirstListedAt,
 		CreatedAt:            it.CreatedAt,
 		UpdatedAt:            it.UpdatedAt,
 		SellingPlaces:        []string{},
 		Labels:               []string{},
+		SellingPlaceIDs:      []string{},
+		LabelIDs:             []string{},
+	}
+
+	// Rows listed before first_listed_at existed only have listed_at to go on.
+	if out.FirstListedAt == nil {
+		out.FirstListedAt = it.ListedAt
 	}
 
 	for _, sp := range it.Edges.SellingPlaces {
 		out.SellingPlaces = append(out.SellingPlaces, sp.Name)
+		out.SellingPlaceIDs = append(out.SellingPlaceIDs, sp.ID)
 	}
 	for _, l := range it.Edges.Labels {
 		out.Labels = append(out.Labels, l.Name)
+		out.LabelIDs = append(out.LabelIDs, l.ID)
 	}
 	if it.Edges.SoldPlace != nil {
 		name := it.Edges.SoldPlace.Name
+		id := it.Edges.SoldPlace.ID
 		out.SoldPlace = &name
+		out.SoldPlaceID = &id
 	}
 
 	count, err := db.GetDBFromContext(ctx).ItemImage.Query().
@@ -162,6 +184,17 @@ type itemBody struct {
 	WhatnotNumber        *string    `json:"whatnot_number,omitempty"`
 	SellingPlaceIDs      []string   `json:"selling_place_ids,omitempty"`
 	LabelIDs             []string   `json:"label_ids,omitempty"`
+
+	// Status moves the item through draft -> listed -> sold, with archived as
+	// a side exit. The PWA enforces which moves it offers; the API only
+	// validates the value.
+	Status *string `json:"status,omitempty" enum:"draft,listed,sold,archived" doc:"New status for the item"`
+
+	// Sale details, for correcting a sale after the fact. Marking an item sold
+	// in the first place goes through POST /admin/items/{id}/sold.
+	SoldPriceCents *int64     `json:"sold_price_cents,omitempty" doc:"Sale price in USD cents"`
+	SoldAt         *time.Time `json:"sold_at,omitempty"`
+	SoldPlaceID    *string    `json:"sold_place_id,omitempty" doc:"ID of the place where it sold"`
 }
 
 type getItemOutput struct {
@@ -201,6 +234,31 @@ type markSoldInput struct {
 	}
 }
 
+// isEmpty reports whether the client sent the field as an empty string, which
+// the PWA uses to mean "clear it".
+func isEmpty(s *string) bool { return s != nil && *s == "" }
+
+// omitEmpty drops an empty string so it is never stored as "".
+func omitEmpty(s *string) *string {
+	if isEmpty(s) {
+		return nil
+	}
+	return s
+}
+
+// applyItemClears clears the fields the client sent as an empty string.
+// whatnot_number is unique when present, so a cleared value must become NULL
+// rather than "", otherwise two cleared items collide.
+func applyItemClears(update *generated.ItemUpdateOne, body itemBody) *generated.ItemUpdateOne {
+	if isEmpty(body.Notes) {
+		update.ClearNotes()
+	}
+	if isEmpty(body.WhatnotNumber) {
+		update.ClearWhatnotNumber()
+	}
+	return update
+}
+
 // registerItemCRUD registers the item create/list/get/update and mark-sold
 // routes.
 func registerItemCRUD(api huma.API, db *db_platform.Client) {
@@ -232,8 +290,23 @@ func registerItemCRUD(api huma.API, db *db_platform.Client) {
 			SetNillableExtraMeasurements(in.Body.ExtraMeasurements).
 			SetNillableWeightLbs(in.Body.WeightLbs).
 			SetNillableWeightOz(in.Body.WeightOz).
-			SetNillableNotes(in.Body.Notes).
-			SetNillableWhatnotNumber(in.Body.WhatnotNumber)
+			SetNillableNotes(omitEmpty(in.Body.Notes)).
+			SetNillableWhatnotNumber(omitEmpty(in.Body.WhatnotNumber))
+
+		if in.Body.Status != nil {
+			status, err := parseItemStatus(*in.Body.Status)
+			if err != nil {
+				return nil, huma.Error400BadRequest(err.Error())
+			}
+			if status == item.StatusSold && in.Body.SoldPlaceID == nil {
+				return nil, huma.Error400BadRequest("a sold item needs sold_place_id")
+			}
+			create.SetStatus(status)
+			if status == item.StatusListed {
+				now := time.Now().UTC()
+				create.SetListedAt(now).SetFirstListedAt(now)
+			}
+		}
 
 		if in.Body.MeasurementUnit != nil {
 			unit, err := parseMeasurementUnit(*in.Body.MeasurementUnit)
@@ -359,8 +432,62 @@ func registerItemCRUD(api huma.API, db *db_platform.Client) {
 			SetNillableExtraMeasurements(in.Body.ExtraMeasurements).
 			SetNillableWeightLbs(in.Body.WeightLbs).
 			SetNillableWeightOz(in.Body.WeightOz).
-			SetNillableNotes(in.Body.Notes).
-			SetNillableWhatnotNumber(in.Body.WhatnotNumber)
+			SetNillableNotes(omitEmpty(in.Body.Notes)).
+			SetNillableWhatnotNumber(omitEmpty(in.Body.WhatnotNumber))
+
+		applyItemClears(update, in.Body)
+
+		update.SetNillableSoldPriceCents(in.Body.SoldPriceCents).
+			SetNillableSoldAt(in.Body.SoldAt)
+		if in.Body.SoldPlaceID != nil {
+			placeExists, err := client.SellingPlace.Query().
+				Where(sellingplace.IDEQ(*in.Body.SoldPlaceID), sellingplace.DeletedAtIsNil()).
+				Exist(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("checking selling place: %w", err)
+			}
+			if !placeExists {
+				return nil, huma.Error400BadRequest("unknown sold_place_id")
+			}
+			update.SetSoldPlaceID(*in.Body.SoldPlaceID)
+		}
+
+		if in.Body.Status != nil {
+			status, err := parseItemStatus(*in.Body.Status)
+			if err != nil {
+				return nil, huma.Error400BadRequest(err.Error())
+			}
+			current, err := client.Item.Query().
+				Where(item.IDEQ(in.ID)).
+				Select(item.FieldStatus, item.FieldSoldPlaceID, item.FieldFirstListedAt).
+				Only(ctx)
+			if generated.IsNotFound(err) {
+				return nil, huma.Error404NotFound("item not found")
+			}
+			if err != nil {
+				return nil, fmt.Errorf("loading item status: %w", err)
+			}
+			// A sold item always names where it sold: sales insight is built on
+			// that edge. The place comes from this payload or is already set.
+			if status == item.StatusSold && in.Body.SoldPlaceID == nil && current.SoldPlaceID == nil {
+				return nil, huma.Error400BadRequest("a sold item needs sold_place_id")
+			}
+			update.SetStatus(status)
+			// listed_at times the current listing: stamped on the way in,
+			// cleared on the way back to draft, untouched when the status is
+			// re-sent unchanged.
+			switch {
+			case status == item.StatusListed && current.Status != item.StatusListed:
+				now := time.Now().UTC()
+				update.SetListedAt(now)
+				// first_listed_at is written once and then left alone.
+				if current.FirstListedAt == nil {
+					update.SetFirstListedAt(now)
+				}
+			case status == item.StatusDraft:
+				update.ClearListedAt()
+			}
+		}
 
 		if in.Body.MeasurementUnit != nil {
 			unit, err := parseMeasurementUnit(*in.Body.MeasurementUnit)

@@ -20,6 +20,8 @@ var (
 		{Name: "category", Type: field.TypeString, Nullable: true},
 		{Name: "condition", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "listed", "sold", "archived"}, Default: "draft"},
+		{Name: "listed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "first_listed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "acquisition_cost_cents", Type: field.TypeInt64, Nullable: true},
 		{Name: "purchased_at", Type: field.TypeTime, Nullable: true},
 		{Name: "listing_price_cents", Type: field.TypeInt64, Nullable: true},
@@ -45,13 +47,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "items_selling_places_sold_place",
-				Columns:    []*schema.Column{ItemsColumns[24]},
+				Columns:    []*schema.Column{ItemsColumns[26]},
 				RefColumns: []*schema.Column{SellingPlacesColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "items_users_items",
-				Columns:    []*schema.Column{ItemsColumns[25]},
+				Columns:    []*schema.Column{ItemsColumns[27]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

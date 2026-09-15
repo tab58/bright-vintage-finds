@@ -9,10 +9,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@stylexjs/stylex": "^0.9.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cn": "^0.3.0",
+    "lucide-react": "^1.46.0",
+    "radix-ui": "^1.6.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.1.1"
+    "react-router-dom": "^7.1.1",
+    "tailwind-merge": "^3.7.0",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
@@ -20,7 +27,6 @@
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "~5.6.3",
     "vite": "^5.4.11",
-    "vite-plugin-pwa": "^0.21.1",
-    "vite-plugin-stylex": "^0.13.0"
+    "vite-plugin-pwa": "^0.21.1"
   }
 }

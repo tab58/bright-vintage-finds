@@ -1,6 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import * as stylex from '@stylexjs/stylex'
+import { Camera, ChevronLeft, Images, Plus, X } from 'lucide-react'
+import { ChipPicker } from '@/components/chip-picker'
+import {
+  emptyFields,
+  fieldsToBody,
+  ItemFieldCards,
+  NotesCard,
+  type ItemFields,
+} from '@/components/item-fields'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   createItem,
   createLabel,
@@ -9,46 +19,38 @@ import {
   listSellingPlaces,
   uploadImage,
   type ItemImage,
-  type Label,
+  type Label as LabelRow,
   type SellingPlace,
 } from '../api/client'
-
-const inputStyle = { width: '100%', padding: 8, boxSizing: 'border-box' } as const
 
 export default function IntakePage() {
   const navigate = useNavigate()
 
-  // fields
-  const [name, setName] = useState('')
-  const [cost, setCost] = useState('')
-  const [purchasedAt, setPurchasedAt] = useState('')
-  const [length_, setLength] = useState('')
-  const [width, setWidth] = useState('')
-  const [height, setHeight] = useState('')
-  const [unit, setUnit] = useState<'inch' | 'cm'>('inch')
-  const [extraMeasurements, setExtraMeasurements] = useState('')
-  const [weightLbs, setWeightLbs] = useState('')
-  const [weightOz, setWeightOz] = useState('')
-  const [notes, setNotes] = useState('')
-  const [whatnot, setWhatnot] = useState('')
+  const [fields, setFields] = useState<ItemFields>(emptyFields)
 
-  // lists
   const [places, setPlaces] = useState<SellingPlace[]>([])
   const [checkedPlaces, setCheckedPlaces] = useState<Set<string>>(new Set())
-  const [newPlaceName, setNewPlaceName] = useState('')
-  const [labels, setLabels] = useState<Label[]>([])
+  const [labels, setLabels] = useState<LabelRow[]>([])
   const [checkedLabels, setCheckedLabels] = useState<Set<string>>(new Set())
-  const [newLabelName, setNewLabelName] = useState('')
 
   // photos staged before save
   const [photos, setPhotos] = useState<File[]>([])
+  const cameraInput = useRef<HTMLInputElement>(null)
+  const libraryInput = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Batch intake: saving clears the form and stays here, so a pile of items
+  // goes in one after another. The banner is the receipt for the last one.
+  const [lastSaved, setLastSaved] = useState<{ id: string; name: string } | null>(null)
+  const [batchCount, setBatchCount] = useState(0)
 
   useEffect(() => {
     listSellingPlaces().then(setPlaces).catch(() => {})
     listLabels().then(setLabels).catch(() => {})
   }, [])
+
+  const previews = useMemo(() => photos.map((f) => URL.createObjectURL(f)), [photos])
+  useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews])
 
   function toggle(set: Set<string>, id: string, apply: (s: Set<string>) => void) {
     const next = new Set(set)
@@ -57,34 +59,36 @@ export default function IntakePage() {
     apply(next)
   }
 
-  async function addPlace() {
-    const name = newPlaceName.trim()
-    if (!name) return
+  function addPhotos(fileList: FileList | null) {
+    setPhotos((prev) => [...prev, ...Array.from(fileList ?? [])])
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  async function addPlace(name: string) {
     try {
       const p = await createSellingPlace(name)
       setPlaces((prev) => [...prev, p])
       setCheckedPlaces((prev) => new Set(prev).add(p.id))
-      setNewPlaceName('')
     } catch (e) {
       setError(String(e))
     }
   }
 
-  async function addLabel() {
-    const name = newLabelName.trim()
-    if (!name) return
+  async function addLabel(name: string) {
     try {
       const l = await createLabel(name)
       setLabels((prev) => [...prev, l])
       setCheckedLabels((prev) => new Set(prev).add(l.id))
-      setNewLabelName('')
     } catch (e) {
       setError(String(e))
     }
   }
 
   async function save() {
-    if (!name.trim()) {
+    if (!fields.name.trim()) {
       setError('Name is required')
       return
     }
@@ -92,18 +96,7 @@ export default function IntakePage() {
     setError(null)
     try {
       const item = await createItem({
-        name: name.trim(),
-        acquisition_cost_cents: cost ? Math.round(parseFloat(cost) * 100) : undefined,
-        purchased_at: purchasedAt || undefined,
-        length: length_ ? parseFloat(length_) : undefined,
-        width: width ? parseFloat(width) : undefined,
-        height: height ? parseFloat(height) : undefined,
-        measurement_unit: unit,
-        extra_measurements: extraMeasurements || undefined,
-        weight_lbs: weightLbs ? parseInt(weightLbs, 10) : undefined,
-        weight_oz: weightOz ? parseFloat(weightOz) : undefined,
-        notes: notes || undefined,
-        whatnot_number: whatnot || undefined,
+        ...fieldsToBody(fields),
         selling_place_ids: [...checkedPlaces],
         label_ids: [...checkedLabels],
       })
@@ -117,7 +110,14 @@ export default function IntakePage() {
         }
       }
       void uploaded
-      navigate(`/item/${item.id}`)
+      // Keep the selling places and labels ticked: a batch usually shares them.
+      setFields(emptyFields)
+      setPhotos([])
+      setLastSaved({ id: item.id, name: item.name })
+      setBatchCount((n) => n + 1)
+      setSaving(false)
+      window.scrollTo({ top: 0 })
+      document.getElementById('new-name')?.focus()
     } catch (e) {
       setError(String(e))
       setSaving(false)
@@ -125,116 +125,158 @@ export default function IntakePage() {
   }
 
   return (
-    <main {...stylex.props(styles.page)}>
-      <h1>New item</h1>
+    <div className="min-h-dvh bg-muted/40">
+      <header className="sticky top-0 z-30 border-b bg-background/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md">
+        <div className="flex h-14 items-center gap-1 px-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Back">
+            <ChevronLeft className="size-5" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-[17px] leading-tight font-semibold tracking-tight">New item</h1>
+            <p className="text-xs text-muted-foreground">
+              {batchCount > 0 ? `${batchCount} saved this session` : 'Draft · not saved'}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            className="text-muted-foreground"
+            onClick={() => navigate('/inventory')}
+          >
+            {batchCount > 0 ? 'Done' : 'Cancel'}
+          </Button>
+        </div>
+      </header>
 
-      <label>Photos</label>
-      <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        multiple
-        onChange={(e) => {
-          const files = Array.from(e.target.files ?? [])
-          setPhotos((prev) => [...prev, ...files])
-          e.target.value = ''
-        }}
-      />
-      {photos.length > 0 && <p>{photos.length} photo(s) staged</p>}
+      {photos.length > 0 && (
+        <div className="border-b bg-background">
+          <div className="flex gap-2 overflow-x-auto px-4 py-3">
+            {previews.map((url, i) => (
+              <div key={url} className="relative size-24 shrink-0 overflow-hidden rounded-md border">
+                <img src={url} alt="" className="size-full object-cover" />
+                {i === 0 && (
+                  <span className="absolute top-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                    Cover
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removePhoto(i)}
+                  aria-label="Remove photo"
+                  className="absolute top-1 right-1 rounded-full bg-black/60 p-0.5 text-white"
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => libraryInput.current?.click()}
+              aria-label="Add photos"
+              className="flex size-24 shrink-0 items-center justify-center rounded-md border border-dashed bg-muted/50 text-muted-foreground"
+            >
+              <Plus className="size-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
-      <label>Name *</label>
-      <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
+      <main className="space-y-4 px-4 pt-4 pb-32">
+        {lastSaved && (
+          <div className="flex items-center justify-between gap-3 rounded-md border bg-background px-3 py-2">
+            <p className="min-w-0 truncate text-sm">
+              Saved <span className="font-medium">{lastSaved.name}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate(`/inventory/item/${lastSaved.id}`)}
+              className="shrink-0 text-sm font-medium underline"
+            >
+              Open
+            </button>
+          </div>
+        )}
 
-      <label>Purchase price ($)</label>
-      <input type="number" step="0.01" value={cost} onChange={(e) => setCost(e.target.value)} style={inputStyle} />
+        <Card>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Photos</h2>
+              {photos.length > 0 && (
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
+                  {photos.length} staged
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button className="h-11 flex-1" onClick={() => cameraInput.current?.click()}>
+                <Camera /> Take photo
+              </Button>
+              <Button variant="outline" className="h-11 flex-1" onClick={() => libraryInput.current?.click()}>
+                <Images /> Library
+              </Button>
+            </div>
+            <input
+              ref={cameraInput}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              hidden
+              onChange={(e) => {
+                addPhotos(e.target.files)
+                e.target.value = ''
+              }}
+            />
+            <input
+              ref={libraryInput}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              onChange={(e) => {
+                addPhotos(e.target.files)
+                e.target.value = ''
+              }}
+            />
+          </CardContent>
+        </Card>
 
-      <label>Purchase date</label>
-      <input type="date" value={purchasedAt} onChange={(e) => setPurchasedAt(e.target.value)} style={inputStyle} />
+        <ItemFieldCards value={fields} onChange={setFields} idPrefix="new" />
 
-      <label>Measurements (inches/cm)</label>
-      <div {...stylex.props(styles.row3)}>
-        <input type="number" placeholder="L" value={length_} onChange={(e) => setLength(e.target.value)} />
-        <input type="number" placeholder="W" value={width} onChange={(e) => setWidth(e.target.value)} />
-        <input type="number" placeholder="H" value={height} onChange={(e) => setHeight(e.target.value)} />
-        <select value={unit} onChange={(e) => setUnit(e.target.value as 'inch' | 'cm')}>
-          <option value="inch">in</option>
-          <option value="cm">cm</option>
-        </select>
-      </div>
-      <input
-        placeholder="Extra measurements (waist, diameter…)"
-        value={extraMeasurements}
-        onChange={(e) => setExtraMeasurements(e.target.value)}
-        style={inputStyle}
-      />
-
-      <label>Weight</label>
-      <div {...stylex.props(styles.row2)}>
-        <input type="number" placeholder="lbs" value={weightLbs} onChange={(e) => setWeightLbs(e.target.value)} />
-        <input type="number" step="0.1" placeholder="oz" value={weightOz} onChange={(e) => setWeightOz(e.target.value)} />
-      </div>
-
-      <label>Notes</label>
-      <textarea value={notes} onChange={(e) => setNotes(e.target.value)} style={inputStyle} />
-
-      <label>Whatnot number</label>
-      <input value={whatnot} onChange={(e) => setWhatnot(e.target.value)} style={inputStyle} />
-
-      <label>Selling places</label>
-      {places.map((p) => (
-        <label key={p.id}>
-          <input
-            type="checkbox"
-            checked={checkedPlaces.has(p.id)}
-            onChange={() => toggle(checkedPlaces, p.id, setCheckedPlaces)}
-          />{' '}
-          {p.name}
-        </label>
-      ))}
-      <div {...stylex.props(styles.addRow)}>
-        <input
-          placeholder="Add place…"
-          value={newPlaceName}
-          onChange={(e) => setNewPlaceName(e.target.value)}
-          style={inputStyle}
+        <ChipPicker
+          title="Selling places"
+          hint="Where this item will be listed"
+          rows={places}
+          checked={checkedPlaces}
+          onToggle={(id) => toggle(checkedPlaces, id, setCheckedPlaces)}
+          onAdd={addPlace}
+          addPlaceholder="Add place…"
         />
-        <button type="button" onClick={addPlace}>Add</button>
-      </div>
 
-      <label>Labels</label>
-      {labels.map((l) => (
-        <label key={l.id}>
-          <input
-            type="checkbox"
-            checked={checkedLabels.has(l.id)}
-            onChange={() => toggle(checkedLabels, l.id, setCheckedLabels)}
-          />{' '}
-          {l.name}
-        </label>
-      ))}
-      <div {...stylex.props(styles.addRow)}>
-        <input
-          placeholder="Add label…"
-          value={newLabelName}
-          onChange={(e) => setNewLabelName(e.target.value)}
-          style={inputStyle}
+        <ChipPicker
+          title="Labels"
+          hint="For searching later"
+          rows={labels}
+          checked={checkedLabels}
+          onToggle={(id) => toggle(checkedLabels, id, setCheckedLabels)}
+          onAdd={addLabel}
+          addPlaceholder="Add label…"
         />
-        <button type="button" onClick={addLabel}>Add</button>
-      </div>
 
-      {error && <p {...stylex.props(styles.error)}>{error}</p>}
-      <button onClick={save} disabled={saving} {...stylex.props(styles.save)}>
-        {saving ? 'Saving…' : 'Save item'}
-      </button>
-    </main>
+        <NotesCard value={fields} onChange={setFields} idPrefix="new" />
+
+        {error && (
+          <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+      </main>
+
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/90 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] backdrop-blur-md">
+        <div className="px-4 pt-3">
+          <Button className="h-12 w-full text-[15px]" onClick={save} disabled={saving}>
+            {saving ? 'Saving…' : 'Save & add another'}
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }
-
-const styles = stylex.create({
-  page: { padding: 16, maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 4 },
-  row3: { display: 'flex', gap: 8 },
-  row2: { display: 'flex', gap: 8 },
-  addRow: { display: 'flex', gap: 8 },
-  error: { color: '#b3261e' },
-  save: { padding: 12, marginTop: 12 },
-})

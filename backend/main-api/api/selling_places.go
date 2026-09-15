@@ -33,6 +33,12 @@ func sellingPlaceOutput(sp *generated.SellingPlace) *SellingPlaceOutput {
 	}
 }
 
+// getSellingPlaceOutput wraps a single place: without the Body field huma
+// answers 204 and puts the fields in headers.
+type getSellingPlaceOutput struct {
+	Body *SellingPlaceOutput `json:"body"`
+}
+
 type listSellingPlacesOutput struct {
 	Body []*SellingPlaceOutput `json:"body"`
 }
@@ -76,7 +82,7 @@ func registerSellingPlaces(api huma.API, db *db_platform.Client) {
 		Method:      http.MethodPost,
 		Path:        "/admin/selling-places",
 		Summary:     "Add a custom selling place",
-	}, func(ctx context.Context, in *createSellingPlaceInput) (*SellingPlaceOutput, error) {
+	}, func(ctx context.Context, in *createSellingPlaceInput) (*getSellingPlaceOutput, error) {
 		sp, err := client.SellingPlace.Create().
 			SetName(in.Body.Name).
 			Save(ctx)
@@ -86,7 +92,7 @@ func registerSellingPlaces(api huma.API, db *db_platform.Client) {
 			}
 			return nil, fmt.Errorf("creating selling place: %w", err)
 		}
-		return sellingPlaceOutput(sp), nil
+		return &getSellingPlaceOutput{Body: sellingPlaceOutput(sp)}, nil
 	})
 
 	huma.Register(api, huma.Operation{

@@ -51,6 +51,8 @@ type ItemMutation struct {
 	category                  *string
 	condition                 *string
 	status                    *item.Status
+	listed_at                 *time.Time
+	first_listed_at           *time.Time
 	acquisition_cost_cents    *int64
 	addacquisition_cost_cents *int64
 	purchased_at              *time.Time
@@ -590,6 +592,104 @@ func (m *ItemMutation) OldStatus(ctx context.Context) (v item.Status, err error)
 // ResetStatus resets all changes to the "status" field.
 func (m *ItemMutation) ResetStatus() {
 	m.status = nil
+}
+
+// SetListedAt sets the "listed_at" field.
+func (m *ItemMutation) SetListedAt(t time.Time) {
+	m.listed_at = &t
+}
+
+// ListedAt returns the value of the "listed_at" field in the mutation.
+func (m *ItemMutation) ListedAt() (r time.Time, exists bool) {
+	v := m.listed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldListedAt returns the old "listed_at" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldListedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldListedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldListedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldListedAt: %w", err)
+	}
+	return oldValue.ListedAt, nil
+}
+
+// ClearListedAt clears the value of the "listed_at" field.
+func (m *ItemMutation) ClearListedAt() {
+	m.listed_at = nil
+	m.clearedFields[item.FieldListedAt] = struct{}{}
+}
+
+// ListedAtCleared returns if the "listed_at" field was cleared in this mutation.
+func (m *ItemMutation) ListedAtCleared() bool {
+	_, ok := m.clearedFields[item.FieldListedAt]
+	return ok
+}
+
+// ResetListedAt resets all changes to the "listed_at" field.
+func (m *ItemMutation) ResetListedAt() {
+	m.listed_at = nil
+	delete(m.clearedFields, item.FieldListedAt)
+}
+
+// SetFirstListedAt sets the "first_listed_at" field.
+func (m *ItemMutation) SetFirstListedAt(t time.Time) {
+	m.first_listed_at = &t
+}
+
+// FirstListedAt returns the value of the "first_listed_at" field in the mutation.
+func (m *ItemMutation) FirstListedAt() (r time.Time, exists bool) {
+	v := m.first_listed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFirstListedAt returns the old "first_listed_at" field's value of the Item entity.
+// If the Item object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ItemMutation) OldFirstListedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFirstListedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFirstListedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFirstListedAt: %w", err)
+	}
+	return oldValue.FirstListedAt, nil
+}
+
+// ClearFirstListedAt clears the value of the "first_listed_at" field.
+func (m *ItemMutation) ClearFirstListedAt() {
+	m.first_listed_at = nil
+	m.clearedFields[item.FieldFirstListedAt] = struct{}{}
+}
+
+// FirstListedAtCleared returns if the "first_listed_at" field was cleared in this mutation.
+func (m *ItemMutation) FirstListedAtCleared() bool {
+	_, ok := m.clearedFields[item.FieldFirstListedAt]
+	return ok
+}
+
+// ResetFirstListedAt resets all changes to the "first_listed_at" field.
+func (m *ItemMutation) ResetFirstListedAt() {
+	m.first_listed_at = nil
+	delete(m.clearedFields, item.FieldFirstListedAt)
 }
 
 // SetAcquisitionCostCents sets the "acquisition_cost_cents" field.
@@ -1744,7 +1844,7 @@ func (m *ItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ItemMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 26)
 	if m.created_at != nil {
 		fields = append(fields, item.FieldCreatedAt)
 	}
@@ -1771,6 +1871,12 @@ func (m *ItemMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, item.FieldStatus)
+	}
+	if m.listed_at != nil {
+		fields = append(fields, item.FieldListedAt)
+	}
+	if m.first_listed_at != nil {
+		fields = append(fields, item.FieldFirstListedAt)
 	}
 	if m.acquisition_cost_cents != nil {
 		fields = append(fields, item.FieldAcquisitionCostCents)
@@ -1843,6 +1949,10 @@ func (m *ItemMutation) Field(name string) (ent.Value, bool) {
 		return m.Condition()
 	case item.FieldStatus:
 		return m.Status()
+	case item.FieldListedAt:
+		return m.ListedAt()
+	case item.FieldFirstListedAt:
+		return m.FirstListedAt()
 	case item.FieldAcquisitionCostCents:
 		return m.AcquisitionCostCents()
 	case item.FieldPurchasedAt:
@@ -1900,6 +2010,10 @@ func (m *ItemMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCondition(ctx)
 	case item.FieldStatus:
 		return m.OldStatus(ctx)
+	case item.FieldListedAt:
+		return m.OldListedAt(ctx)
+	case item.FieldFirstListedAt:
+		return m.OldFirstListedAt(ctx)
 	case item.FieldAcquisitionCostCents:
 		return m.OldAcquisitionCostCents(ctx)
 	case item.FieldPurchasedAt:
@@ -2001,6 +2115,20 @@ func (m *ItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case item.FieldListedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetListedAt(v)
+		return nil
+	case item.FieldFirstListedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFirstListedAt(v)
 		return nil
 	case item.FieldAcquisitionCostCents:
 		v, ok := value.(int64)
@@ -2260,6 +2388,12 @@ func (m *ItemMutation) ClearedFields() []string {
 	if m.FieldCleared(item.FieldCondition) {
 		fields = append(fields, item.FieldCondition)
 	}
+	if m.FieldCleared(item.FieldListedAt) {
+		fields = append(fields, item.FieldListedAt)
+	}
+	if m.FieldCleared(item.FieldFirstListedAt) {
+		fields = append(fields, item.FieldFirstListedAt)
+	}
 	if m.FieldCleared(item.FieldAcquisitionCostCents) {
 		fields = append(fields, item.FieldAcquisitionCostCents)
 	}
@@ -2327,6 +2461,12 @@ func (m *ItemMutation) ClearField(name string) error {
 		return nil
 	case item.FieldCondition:
 		m.ClearCondition()
+		return nil
+	case item.FieldListedAt:
+		m.ClearListedAt()
+		return nil
+	case item.FieldFirstListedAt:
+		m.ClearFirstListedAt()
 		return nil
 	case item.FieldAcquisitionCostCents:
 		m.ClearAcquisitionCostCents()
@@ -2404,6 +2544,12 @@ func (m *ItemMutation) ResetField(name string) error {
 		return nil
 	case item.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case item.FieldListedAt:
+		m.ResetListedAt()
+		return nil
+	case item.FieldFirstListedAt:
+		m.ResetFirstListedAt()
 		return nil
 	case item.FieldAcquisitionCostCents:
 		m.ResetAcquisitionCostCents()

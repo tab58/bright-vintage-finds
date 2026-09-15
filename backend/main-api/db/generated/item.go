@@ -37,6 +37,10 @@ type Item struct {
 	Condition *string `json:"condition,omitempty"`
 	// Status holds the value of the "status" field.
 	Status item.Status `json:"status,omitempty"`
+	// ListedAt holds the value of the "listed_at" field.
+	ListedAt *time.Time `json:"listed_at,omitempty"`
+	// FirstListedAt holds the value of the "first_listed_at" field.
+	FirstListedAt *time.Time `json:"first_listed_at,omitempty"`
 	// AcquisitionCostCents holds the value of the "acquisition_cost_cents" field.
 	AcquisitionCostCents *int64 `json:"acquisition_cost_cents,omitempty"`
 	// PurchasedAt holds the value of the "purchased_at" field.
@@ -151,7 +155,7 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case item.FieldID, item.FieldName, item.FieldDescription, item.FieldCategory, item.FieldCondition, item.FieldStatus, item.FieldMeasurementUnit, item.FieldExtraMeasurements, item.FieldNotes, item.FieldWhatnotNumber, item.FieldSoldPlaceID:
 			values[i] = new(sql.NullString)
-		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldDeletedAt, item.FieldPurchasedAt, item.FieldSoldAt:
+		case item.FieldCreatedAt, item.FieldUpdatedAt, item.FieldDeletedAt, item.FieldListedAt, item.FieldFirstListedAt, item.FieldPurchasedAt, item.FieldSoldAt:
 			values[i] = new(sql.NullTime)
 		case item.ForeignKeys[0]: // user_items
 			values[i] = new(sql.NullString)
@@ -233,6 +237,20 @@ func (_m *Item) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				_m.Status = item.Status(value.String)
+			}
+		case item.FieldListedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field listed_at", values[i])
+			} else if value.Valid {
+				_m.ListedAt = new(time.Time)
+				*_m.ListedAt = value.Time
+			}
+		case item.FieldFirstListedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field first_listed_at", values[i])
+			} else if value.Valid {
+				_m.FirstListedAt = new(time.Time)
+				*_m.FirstListedAt = value.Time
 			}
 		case item.FieldAcquisitionCostCents:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -440,6 +458,16 @@ func (_m *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))
+	builder.WriteString(", ")
+	if v := _m.ListedAt; v != nil {
+		builder.WriteString("listed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.FirstListedAt; v != nil {
+		builder.WriteString("first_listed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.AcquisitionCostCents; v != nil {
 		builder.WriteString("acquisition_cost_cents=")

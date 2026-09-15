@@ -105,6 +105,16 @@ func Condition(v string) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldCondition, v))
 }
 
+// ListedAt applies equality check predicate on the "listed_at" field. It's identical to ListedAtEQ.
+func ListedAt(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldListedAt, v))
+}
+
+// FirstListedAt applies equality check predicate on the "first_listed_at" field. It's identical to FirstListedAtEQ.
+func FirstListedAt(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldFirstListedAt, v))
+}
+
 // AcquisitionCostCents applies equality check predicate on the "acquisition_cost_cents" field. It's identical to AcquisitionCostCentsEQ.
 func AcquisitionCostCents(v int64) predicate.Item {
 	return predicate.Item(sql.FieldEQ(FieldAcquisitionCostCents, v))
@@ -653,6 +663,106 @@ func StatusIn(vs ...Status) predicate.Item {
 // StatusNotIn applies the NotIn predicate on the "status" field.
 func StatusNotIn(vs ...Status) predicate.Item {
 	return predicate.Item(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// ListedAtEQ applies the EQ predicate on the "listed_at" field.
+func ListedAtEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldListedAt, v))
+}
+
+// ListedAtNEQ applies the NEQ predicate on the "listed_at" field.
+func ListedAtNEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldListedAt, v))
+}
+
+// ListedAtIn applies the In predicate on the "listed_at" field.
+func ListedAtIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldListedAt, vs...))
+}
+
+// ListedAtNotIn applies the NotIn predicate on the "listed_at" field.
+func ListedAtNotIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldListedAt, vs...))
+}
+
+// ListedAtGT applies the GT predicate on the "listed_at" field.
+func ListedAtGT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldListedAt, v))
+}
+
+// ListedAtGTE applies the GTE predicate on the "listed_at" field.
+func ListedAtGTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldListedAt, v))
+}
+
+// ListedAtLT applies the LT predicate on the "listed_at" field.
+func ListedAtLT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldListedAt, v))
+}
+
+// ListedAtLTE applies the LTE predicate on the "listed_at" field.
+func ListedAtLTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldListedAt, v))
+}
+
+// ListedAtIsNil applies the IsNil predicate on the "listed_at" field.
+func ListedAtIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldListedAt))
+}
+
+// ListedAtNotNil applies the NotNil predicate on the "listed_at" field.
+func ListedAtNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldListedAt))
+}
+
+// FirstListedAtEQ applies the EQ predicate on the "first_listed_at" field.
+func FirstListedAtEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldEQ(FieldFirstListedAt, v))
+}
+
+// FirstListedAtNEQ applies the NEQ predicate on the "first_listed_at" field.
+func FirstListedAtNEQ(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNEQ(FieldFirstListedAt, v))
+}
+
+// FirstListedAtIn applies the In predicate on the "first_listed_at" field.
+func FirstListedAtIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldIn(FieldFirstListedAt, vs...))
+}
+
+// FirstListedAtNotIn applies the NotIn predicate on the "first_listed_at" field.
+func FirstListedAtNotIn(vs ...time.Time) predicate.Item {
+	return predicate.Item(sql.FieldNotIn(FieldFirstListedAt, vs...))
+}
+
+// FirstListedAtGT applies the GT predicate on the "first_listed_at" field.
+func FirstListedAtGT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGT(FieldFirstListedAt, v))
+}
+
+// FirstListedAtGTE applies the GTE predicate on the "first_listed_at" field.
+func FirstListedAtGTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldGTE(FieldFirstListedAt, v))
+}
+
+// FirstListedAtLT applies the LT predicate on the "first_listed_at" field.
+func FirstListedAtLT(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLT(FieldFirstListedAt, v))
+}
+
+// FirstListedAtLTE applies the LTE predicate on the "first_listed_at" field.
+func FirstListedAtLTE(v time.Time) predicate.Item {
+	return predicate.Item(sql.FieldLTE(FieldFirstListedAt, v))
+}
+
+// FirstListedAtIsNil applies the IsNil predicate on the "first_listed_at" field.
+func FirstListedAtIsNil() predicate.Item {
+	return predicate.Item(sql.FieldIsNull(FieldFirstListedAt))
+}
+
+// FirstListedAtNotNil applies the NotNil predicate on the "first_listed_at" field.
+func FirstListedAtNotNil() predicate.Item {
+	return predicate.Item(sql.FieldNotNull(FieldFirstListedAt))
 }
 
 // AcquisitionCostCentsEQ applies the EQ predicate on the "acquisition_cost_cents" field.

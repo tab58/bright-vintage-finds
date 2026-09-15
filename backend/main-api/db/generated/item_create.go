@@ -145,6 +145,34 @@ func (_c *ItemCreate) SetNillableStatus(v *item.Status) *ItemCreate {
 	return _c
 }
 
+// SetListedAt sets the "listed_at" field.
+func (_c *ItemCreate) SetListedAt(v time.Time) *ItemCreate {
+	_c.mutation.SetListedAt(v)
+	return _c
+}
+
+// SetNillableListedAt sets the "listed_at" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableListedAt(v *time.Time) *ItemCreate {
+	if v != nil {
+		_c.SetListedAt(*v)
+	}
+	return _c
+}
+
+// SetFirstListedAt sets the "first_listed_at" field.
+func (_c *ItemCreate) SetFirstListedAt(v time.Time) *ItemCreate {
+	_c.mutation.SetFirstListedAt(v)
+	return _c
+}
+
+// SetNillableFirstListedAt sets the "first_listed_at" field if the given value is not nil.
+func (_c *ItemCreate) SetNillableFirstListedAt(v *time.Time) *ItemCreate {
+	if v != nil {
+		_c.SetFirstListedAt(*v)
+	}
+	return _c
+}
+
 // SetAcquisitionCostCents sets the "acquisition_cost_cents" field.
 func (_c *ItemCreate) SetAcquisitionCostCents(v int64) *ItemCreate {
 	_c.mutation.SetAcquisitionCostCents(v)
@@ -601,6 +629,14 @@ func (_c *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
 	}
+	if value, ok := _c.mutation.ListedAt(); ok {
+		_spec.SetField(item.FieldListedAt, field.TypeTime, value)
+		_node.ListedAt = &value
+	}
+	if value, ok := _c.mutation.FirstListedAt(); ok {
+		_spec.SetField(item.FieldFirstListedAt, field.TypeTime, value)
+		_node.FirstListedAt = &value
+	}
 	if value, ok := _c.mutation.AcquisitionCostCents(); ok {
 		_spec.SetField(item.FieldAcquisitionCostCents, field.TypeInt64, value)
 		_node.AcquisitionCostCents = &value
@@ -914,6 +950,42 @@ func (u *ItemUpsert) SetStatus(v item.Status) *ItemUpsert {
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *ItemUpsert) UpdateStatus() *ItemUpsert {
 	u.SetExcluded(item.FieldStatus)
+	return u
+}
+
+// SetListedAt sets the "listed_at" field.
+func (u *ItemUpsert) SetListedAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldListedAt, v)
+	return u
+}
+
+// UpdateListedAt sets the "listed_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateListedAt() *ItemUpsert {
+	u.SetExcluded(item.FieldListedAt)
+	return u
+}
+
+// ClearListedAt clears the value of the "listed_at" field.
+func (u *ItemUpsert) ClearListedAt() *ItemUpsert {
+	u.SetNull(item.FieldListedAt)
+	return u
+}
+
+// SetFirstListedAt sets the "first_listed_at" field.
+func (u *ItemUpsert) SetFirstListedAt(v time.Time) *ItemUpsert {
+	u.Set(item.FieldFirstListedAt, v)
+	return u
+}
+
+// UpdateFirstListedAt sets the "first_listed_at" field to the value that was provided on create.
+func (u *ItemUpsert) UpdateFirstListedAt() *ItemUpsert {
+	u.SetExcluded(item.FieldFirstListedAt)
+	return u
+}
+
+// ClearFirstListedAt clears the value of the "first_listed_at" field.
+func (u *ItemUpsert) ClearFirstListedAt() *ItemUpsert {
+	u.SetNull(item.FieldFirstListedAt)
 	return u
 }
 
@@ -1424,6 +1496,48 @@ func (u *ItemUpsertOne) SetStatus(v item.Status) *ItemUpsertOne {
 func (u *ItemUpsertOne) UpdateStatus() *ItemUpsertOne {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetListedAt sets the "listed_at" field.
+func (u *ItemUpsertOne) SetListedAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetListedAt(v)
+	})
+}
+
+// UpdateListedAt sets the "listed_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateListedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateListedAt()
+	})
+}
+
+// ClearListedAt clears the value of the "listed_at" field.
+func (u *ItemUpsertOne) ClearListedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearListedAt()
+	})
+}
+
+// SetFirstListedAt sets the "first_listed_at" field.
+func (u *ItemUpsertOne) SetFirstListedAt(v time.Time) *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetFirstListedAt(v)
+	})
+}
+
+// UpdateFirstListedAt sets the "first_listed_at" field to the value that was provided on create.
+func (u *ItemUpsertOne) UpdateFirstListedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateFirstListedAt()
+	})
+}
+
+// ClearFirstListedAt clears the value of the "first_listed_at" field.
+func (u *ItemUpsertOne) ClearFirstListedAt() *ItemUpsertOne {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearFirstListedAt()
 	})
 }
 
@@ -2153,6 +2267,48 @@ func (u *ItemUpsertBulk) SetStatus(v item.Status) *ItemUpsertBulk {
 func (u *ItemUpsertBulk) UpdateStatus() *ItemUpsertBulk {
 	return u.Update(func(s *ItemUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetListedAt sets the "listed_at" field.
+func (u *ItemUpsertBulk) SetListedAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetListedAt(v)
+	})
+}
+
+// UpdateListedAt sets the "listed_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateListedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateListedAt()
+	})
+}
+
+// ClearListedAt clears the value of the "listed_at" field.
+func (u *ItemUpsertBulk) ClearListedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearListedAt()
+	})
+}
+
+// SetFirstListedAt sets the "first_listed_at" field.
+func (u *ItemUpsertBulk) SetFirstListedAt(v time.Time) *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.SetFirstListedAt(v)
+	})
+}
+
+// UpdateFirstListedAt sets the "first_listed_at" field to the value that was provided on create.
+func (u *ItemUpsertBulk) UpdateFirstListedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.UpdateFirstListedAt()
+	})
+}
+
+// ClearFirstListedAt clears the value of the "first_listed_at" field.
+func (u *ItemUpsertBulk) ClearFirstListedAt() *ItemUpsertBulk {
+	return u.Update(func(s *ItemUpsert) {
+		s.ClearFirstListedAt()
 	})
 }
 

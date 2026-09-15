@@ -45,6 +45,8 @@ erDiagram
         string category               "nullable"
         string condition              "nullable"
         enum   status                 "draft|listed|sold|archived"
+        timestamp listed_at           "nullable, set while listed"
+        timestamp first_listed_at     "nullable, first listing, never cleared"
         int64  acquisition_cost_cents "nullable"
         timestamp purchased_at        "nullable"
         int64  listing_price_cents    "nullable"
@@ -82,7 +84,7 @@ erDiagram
     }
 ```
 
-Prices are USD cents. Sales insight is computed from `sold_price_cents`/`sold_at` on sold items — no separate sales table yet.
+Prices are USD cents. Sales insight is computed from `sold_price_cents`/`sold_at` on sold items — no separate sales table yet. `listed_at` is stamped when an item moves to `listed` and cleared when it goes back to `draft`, so it times the current listing rather than the first one. `first_listed_at` is stamped on the first listing and never cleared, so time-from-listing-to-sale survives an unlist/relist. The `sold_place` edge is `ON DELETE RESTRICT`: a selling place with sales against it cannot be hard-deleted, so a sold item never loses the platform it sold on (the API soft-deletes places regardless).
 
 ## Workflow: Adding or Modifying a Schema
 
