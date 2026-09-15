@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Archive, ChevronLeft, Pencil, RotateCcw, Tag, Undo2 } from 'lucide-react'
+import { Archive, Camera, ChevronLeft, Images, Pencil, Plus, RotateCcw, Tag, Undo2 } from 'lucide-react'
 import { ChipPicker } from '@/components/chip-picker'
+import { ACCEPTED_IMAGE_TYPES, toUploadableImage } from '@/components/image-upload'
 import {
   emptyFields,
   fieldsFromItem,
@@ -26,6 +27,7 @@ import {
   listSellingPlaces,
   markItemSold,
   updateItem,
+  uploadImage,
   type Item,
   type ItemImage,
   type ItemStatus,
@@ -71,6 +73,8 @@ export default function ItemPage() {
   const [soldAt, setSoldAt] = useState('')
 
   const [sellOpen, setSellOpen] = useState(false)
+  const cameraInput = useRef<HTMLInputElement>(null)
+  const libraryInput = useRef<HTMLInputElement>(null)
   // Details are read-only until the owner deliberately opens the form.
   const [editing, setEditing] = useState(false)
 
@@ -113,6 +117,23 @@ export default function ItemPage() {
     }
   }
 
+  // Photos upload straight away here: the item already exists, so there is
+  // nothing to stage them against.
+  async function addPhotos(fileList: FileList | null, itemId: string) {
+    const picked = Array.from(fileList ?? [])
+    if (picked.length === 0) return
+    setBusy(true)
+    setError(null)
+    try {
+      for (const file of picked) await uploadImage(itemId, await toUploadableImage(file))
+      setImages(await listItemImages(itemId))
+    } catch (e) {
+      setError(`Photo upload failed: ${String(e instanceof Error ? e.message : e)}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (error && !item) {
     return (
       <main className="mx-auto flex max-w-[480px] flex-col gap-2 p-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
@@ -133,6 +154,9 @@ export default function ItemPage() {
 
   // Sold and archived items are records, not forms: nothing on them is editable.
   const readOnly = item.status === 'sold' || item.status === 'archived'
+  // Photos stay editable while the item is still a draft; once listed it is
+  // out in the world and the pictures are part of the listing.
+  const canAddPhotos = item.status === 'draft'
   const canList = checkedPlaces.size > 0
 
   function toggle(set: Set<string>, id: string, apply: (s: Set<string>) => void) {
@@ -213,6 +237,16 @@ export default function ItemPage() {
                 )}
               </div>
             ))}
+            {canAddPhotos && (
+              <button
+                type="button"
+                onClick={() => libraryInput.current?.click()}
+                aria-label="Add photos"
+                className="flex size-24 shrink-0 items-center justify-center rounded-md border border-dashed bg-muted/50 text-muted-foreground"
+              >
+                <Plus className="size-5" />
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -234,6 +268,54 @@ export default function ItemPage() {
               <SaleRow label="Sold on" value={soldAt || '—'} />
               <SaleRow label="Sold at" value={item.sold_place ?? '—'} />
               <SaleRow label="Whatnot number" value={fields.whatnot || '—'} />
+            </CardContent>
+          </Card>
+        )}
+
+        {canAddPhotos && (
+          <Card>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold">Photos</h2>
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
+                  {images.length}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button className="h-11 flex-1" disabled={busy} onClick={() => cameraInput.current?.click()}>
+                  <Camera /> {busy ? 'Uploading…' : 'Take photo'}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11 flex-1"
+                  disabled={busy}
+                  onClick={() => libraryInput.current?.click()}
+                >
+                  <Images /> Library
+                </Button>
+              </div>
+              <input
+                ref={cameraInput}
+                type="file"
+                accept={ACCEPTED_IMAGE_TYPES}
+                capture="environment"
+                hidden
+                onChange={(e) => {
+                  void addPhotos(e.target.files, item.id)
+                  e.target.value = ''
+                }}
+              />
+              <input
+                ref={libraryInput}
+                type="file"
+                accept={ACCEPTED_IMAGE_TYPES}
+                multiple
+                hidden
+                onChange={(e) => {
+                  void addPhotos(e.target.files, item.id)
+                  e.target.value = ''
+                }}
+              />
             </CardContent>
           </Card>
         )}

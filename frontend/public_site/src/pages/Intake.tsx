@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, ChevronLeft, Images, Plus, X } from 'lucide-react'
 import { ChipPicker } from '@/components/chip-picker'
+import { ACCEPTED_IMAGE_TYPES, toUploadableImage } from '@/components/image-upload'
 import {
   emptyFields,
   fieldsToBody,
@@ -23,9 +24,6 @@ import {
   type SellingPlace,
 } from '../api/client'
 
-// Must match the contentType allow-list on POST /admin/items/{id}/images.
-const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/png,image/webp'
-
 export default function IntakePage() {
   const navigate = useNavigate()
 
@@ -41,6 +39,7 @@ export default function IntakePage() {
   const cameraInput = useRef<HTMLInputElement>(null)
   const libraryInput = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
+  const [converting, setConverting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // Batch intake: saving clears the form and stays here, so a pile of items
   // goes in one after another. The banner is the receipt for the last one.
@@ -62,8 +61,20 @@ export default function IntakePage() {
     apply(next)
   }
 
-  function addPhotos(fileList: FileList | null) {
-    setPhotos((prev) => [...prev, ...Array.from(fileList ?? [])])
+  async function addPhotos(fileList: FileList | null) {
+    const picked = Array.from(fileList ?? [])
+    if (picked.length === 0) return
+    setConverting(true)
+    try {
+      // Convert here, not at save time: a photo that cannot be used should
+      // fail while the item is still on screen, not after it is saved.
+      const usable = await Promise.all(picked.map(toUploadableImage))
+      setPhotos((prev) => [...prev, ...usable])
+    } catch (e) {
+      setError(String(e instanceof Error ? e.message : e))
+    } finally {
+      setConverting(false)
+    }
   }
 
   function removePhoto(index: number) {
@@ -213,10 +224,19 @@ export default function IntakePage() {
               )}
             </div>
             <div className="flex gap-2">
-              <Button className="h-11 flex-1" onClick={() => cameraInput.current?.click()}>
-                <Camera /> Take photo
+              <Button
+                className="h-11 flex-1"
+                disabled={converting}
+                onClick={() => cameraInput.current?.click()}
+              >
+                <Camera /> {converting ? 'Preparing…' : 'Take photo'}
               </Button>
-              <Button variant="outline" className="h-11 flex-1" onClick={() => libraryInput.current?.click()}>
+              <Button
+                variant="outline"
+                className="h-11 flex-1"
+                disabled={converting}
+                onClick={() => libraryInput.current?.click()}
+              >
                 <Images /> Library
               </Button>
             </div>
@@ -229,7 +249,7 @@ export default function IntakePage() {
               capture="environment"
               hidden
               onChange={(e) => {
-                addPhotos(e.target.files)
+                void addPhotos(e.target.files)
                 e.target.value = ''
               }}
             />
@@ -240,7 +260,7 @@ export default function IntakePage() {
               multiple
               hidden
               onChange={(e) => {
-                addPhotos(e.target.files)
+                void addPhotos(e.target.files)
                 e.target.value = ''
               }}
             />
