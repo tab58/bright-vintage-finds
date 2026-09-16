@@ -21,17 +21,26 @@ export default function HomePage() {
   );
 }
 
+// The logo is gold line art on transparency, so it sits straight on the dark
+// band with nothing behind it — the band supplies the ground the mark needs.
 function Masthead() {
   return (
-    <header className="border-b border-parlor-rule bg-parlor-paper-dim">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-1 px-6 py-6 text-center">
+    <header className="border-b border-parlor-rule bg-parlor-ink">
+      <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-6 py-8 text-center">
         <a
           href="#top"
-          className="font-display text-2xl leading-none tracking-[0.02em] text-parlor-ink sm:text-3xl"
+          aria-label={shop.name}
+          className="transition-opacity hover:opacity-85"
         >
-          {shop.name}
+          <img
+            src="/logo.png"
+            alt={shop.name}
+            width={446}
+            height={437}
+            className="block h-48 w-auto sm:h-56"
+          />
         </a>
-        <p className="text-[0.62rem] tracking-[0.32em] text-parlor-muted uppercase sm:text-[0.7rem]">
+        <p className="text-[0.62rem] tracking-[0.32em] text-parlor-paper/70 uppercase sm:text-[0.7rem]">
           {shop.tagline}
         </p>
       </div>

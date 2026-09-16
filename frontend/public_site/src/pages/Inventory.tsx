@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ListItDialog } from '@/components/list-it-dialog';
 import { shortDuration } from '@/components/duration';
 import { Input } from '@/components/ui/input';
 import {
@@ -53,6 +54,7 @@ export default function InventoryPage() {
     () => new Set(GROUPS.filter((g) => g.openByDefault).map((g) => g.value)),
   );
   const [menuItem, setMenuItem] = useState<Item | null>(null);
+  const [pendingList, setPendingList] = useState<Item | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -104,6 +106,12 @@ export default function InventoryPage() {
 
   async function move(it: Item, to: ItemStatus) {
     setMenuItem(null);
+    // Listing needs a price, so it goes through the dialog instead of straight
+    // to the API. Every other move is a plain status flip.
+    if (to === 'listed') {
+      setPendingList(it);
+      return;
+    }
     try {
       await updateItem(it.id, { name: it.name, status: to });
       setReloadKey((k) => k + 1);
@@ -217,6 +225,23 @@ export default function InventoryPage() {
         onClose={() => setMenuItem(null)}
         onMove={move}
         onDelete={remove}
+      />
+
+      <ListItDialog
+        open={pendingList !== null}
+        onOpenChange={(next) => !next && setPendingList(null)}
+        itemName={pendingList?.name ?? ''}
+        defaultPriceCents={pendingList?.listing_price_cents}
+        onConfirm={async (priceCents) => {
+          if (!pendingList) return;
+          await updateItem(pendingList.id, {
+            name: pendingList.name,
+            status: 'listed',
+            listing_price_cents: priceCents,
+          });
+          setPendingList(null);
+          setReloadKey((k) => k + 1);
+        }}
       />
     </main>
   );

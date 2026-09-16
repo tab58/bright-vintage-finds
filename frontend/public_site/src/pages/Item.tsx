@@ -26,6 +26,7 @@ import {
   NotesCard,
   type ItemFields,
 } from '@/components/item-fields';
+import { ListItDialog } from '@/components/list-it-dialog';
 import { shortDuration } from '@/components/duration';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -94,6 +95,7 @@ export default function ItemPage() {
   const [soldAt, setSoldAt] = useState('');
 
   const [sellOpen, setSellOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const cameraInput = useRef<HTMLInputElement>(null);
   const libraryInput = useRef<HTMLInputElement>(null);
@@ -512,7 +514,7 @@ export default function ItemPage() {
               <Button
                 className="h-12 w-full text-[15px]"
                 disabled={busy || !canList}
-                onClick={() => setStatus('listed', 'List')}
+                onClick={() => setListOpen(true)}
               >
                 <Tag /> List it
               </Button>
@@ -642,11 +644,29 @@ export default function ItemPage() {
         </DialogContent>
       </Dialog>
 
+      <ListItDialog
+        open={listOpen}
+        onOpenChange={setListOpen}
+        itemName={item.name}
+        defaultPriceCents={item.listing_price_cents}
+        onConfirm={async (priceCents) => {
+          await run('List', () =>
+            updateItem(item.id, {
+              name: item.name,
+              status: 'listed',
+              listing_price_cents: priceCents,
+            }),
+          );
+          setListOpen(false);
+        }}
+      />
+
       <MarkSoldDialog
         open={sellOpen}
         onOpenChange={setSellOpen}
         places={places}
         defaultPlaceId={item.selling_place_ids[0] ?? ''}
+        defaultPriceCents={item.listing_price_cents}
         onCreatePlace={async (name) => {
           const p = await createSellingPlace(name);
           setPlaces((prev) => [...prev, p]);
@@ -679,6 +699,7 @@ function MarkSoldDialog({
   onOpenChange,
   places,
   defaultPlaceId,
+  defaultPriceCents,
   onCreatePlace,
   onConfirm,
 }: {
@@ -686,6 +707,8 @@ function MarkSoldDialog({
   onOpenChange: (open: boolean) => void;
   places: SellingPlace[];
   defaultPlaceId: string;
+  /** Most items sell at ask, so the listing price is the starting guess. */
+  defaultPriceCents?: number;
   onCreatePlace: (name: string) => Promise<SellingPlace>;
   onConfirm: (sale: {
     sold_at: string;
@@ -703,10 +726,13 @@ function MarkSoldDialog({
   useEffect(() => {
     if (open) {
       setPlaceId(defaultPlaceId);
+      setPrice(
+        defaultPriceCents != null ? (defaultPriceCents / 100).toFixed(2) : '',
+      );
       setCustomName('');
       setError(null);
     }
-  }, [open, defaultPlaceId]);
+  }, [open, defaultPlaceId, defaultPriceCents]);
 
   const custom = placeId === CUSTOM_PLACE;
   const ready =

@@ -11,6 +11,7 @@ import type { Item, ItemBody } from '../api/client';
 export type ItemFields = {
   name: string;
   cost: string;
+  listPrice: string;
   purchasedAt: string;
   length: string;
   width: string;
@@ -26,6 +27,7 @@ export type ItemFields = {
 export const emptyFields: ItemFields = {
   name: '',
   cost: '',
+  listPrice: '',
   purchasedAt: '',
   length: '',
   width: '',
@@ -47,6 +49,10 @@ export function fieldsFromItem(it: Item): ItemFields {
       it.acquisition_cost_cents != null
         ? (it.acquisition_cost_cents / 100).toFixed(2)
         : '',
+    listPrice:
+      it.listing_price_cents != null
+        ? (it.listing_price_cents / 100).toFixed(2)
+        : '',
     purchasedAt: it.purchased_at?.slice(0, 10) ?? '',
     length: num(it.length),
     width: num(it.width),
@@ -67,6 +73,12 @@ export function fieldsToBody(f: ItemFields): ItemBody {
     name: f.name.trim(),
     acquisition_cost_cents: f.cost
       ? Math.round(parseFloat(f.cost) * 100)
+      : undefined,
+    // ponytail: emptying the field leaves the stored price alone rather than
+    // clearing it, same as `Paid` — the API reads an absent number as "don't
+    // touch". Clearing needs an empty-string convention like applyItemClears.
+    listing_price_cents: f.listPrice
+      ? Math.round(parseFloat(f.listPrice) * 100)
       : undefined,
     purchased_at: f.purchasedAt
       ? new Date(f.purchasedAt).toISOString()
@@ -140,16 +152,34 @@ export function ItemFieldCards({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor={id('purchased')}>Purchased</Label>
-              <Input
-                id={id('purchased')}
-                type="date"
-                className="h-11"
-                value={value.purchasedAt}
-                disabled={disabled}
-                onChange={(e) => set('purchasedAt', e.target.value)}
-              />
+              <Label htmlFor={id('list-price')}>List price</Label>
+              <div className="relative">
+                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
+                  $
+                </span>
+                <Input
+                  id={id('list-price')}
+                  className="h-11 pl-7"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={value.listPrice}
+                  disabled={disabled}
+                  onChange={(e) => set('listPrice', e.target.value)}
+                />
+              </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={id('purchased')}>Purchased</Label>
+            <Input
+              id={id('purchased')}
+              type="date"
+              className="h-11"
+              value={value.purchasedAt}
+              disabled={disabled}
+              onChange={(e) => set('purchasedAt', e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
@@ -321,6 +351,10 @@ export function ItemSummaryCards({ value }: { value: ItemFields }) {
     <Card>
       <CardContent className="space-y-0">
         <Row label="Paid" value={value.cost ? `$${value.cost}` : ''} />
+        <Row
+          label="List price"
+          value={value.listPrice ? `$${value.listPrice}` : ''}
+        />
         <Row label="Purchased" value={value.purchasedAt} />
         <Row label="Size" value={size} />
         <Row label="Extra measurements" value={value.extraMeasurements} />

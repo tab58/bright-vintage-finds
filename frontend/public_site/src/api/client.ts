@@ -96,6 +96,7 @@ export interface ItemBody {
   description?: string;
   acquisition_cost_cents?: number;
   purchased_at?: string;
+  listing_price_cents?: number;
   length?: number;
   width?: number;
   height?: number;
