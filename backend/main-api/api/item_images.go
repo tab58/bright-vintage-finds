@@ -13,6 +13,7 @@ import (
 	"main-api/db/generated/itemimage"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humago"
 	"github.com/segmentio/ksuid"
 )
 
@@ -82,6 +83,12 @@ type listImagesOutput struct {
 // registerItemImageRoutes registers image list and upload routes. They are
 // only registered when object storage is configured.
 func registerItemImageRoutes(api huma.API, deps *AppDeps) {
+	// humago buffers only 8 KiB of a multipart body in memory and spills the
+	// rest to a temp file. The production image is FROM scratch and has no
+	// /tmp, so every real photo failed with 422 "cannot read multipart form".
+	// Buffering the whole capped upload keeps it off disk entirely.
+	humago.MultipartMaxMemory = maxImageBytes
+
 	db := deps.DB
 	client := db.GetDBFromContext(nil)
 
