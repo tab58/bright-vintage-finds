@@ -3,7 +3,7 @@
 // Integration tests for the inventory admin API. They run against the local
 // Docker Postgres (task up) — the same stack the service runs against — and
 // skip cleanly when the database is unreachable.
-package api
+package routes
 
 import (
 	"context"
@@ -15,10 +15,17 @@ import (
 	"time"
 
 	db_platform "main-api/db"
+	"main-api/db/generated"
 	"main-api/db/generated/item"
 	"main-api/db/generated/itemimage"
 	"main-api/db/generated/label"
 	"main-api/db/generated/sellingplace"
+	"main-api/internal/app"
+	entadapter "main-api/internal/app/adapters/ent"
+	s3adapter "main-api/internal/app/adapters/s3"
+	"main-api/internal/app/domain"
+
+	aws_s3 "github.com/tab58/bright-vintage-finds/environment/shared/golang/clients/aws_s3"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/humatest"
@@ -29,11 +36,39 @@ import (
 // transitions are exercised through the handlers the PWA calls.
 func testAPI(t *testing.T, client *db_platform.Client) humatest.TestAPI {
 	t.Helper()
+	application := newApp(client, nil)
 	_, api := humatest.New(t, huma.DefaultConfig("test", "1.0.0"))
-	registerItemCRUD(api, &AppDeps{DB: client})
-	registerSellingPlaces(api, client)
-	registerLabels(api, client)
+	RegisterItemCRUD(api, application)
+	RegisterSellingPlaces(api, application)
+	RegisterLabels(api, application)
 	return api
+}
+
+// newApp wires the application over the test database, with object storage
+// only when a store is given.
+func newApp(client *db_platform.Client, store aws_s3.Client) *app.Application {
+	gen := client.GetDBFromContext(context.Background())
+	cfg := app.Config{
+		Items:  entadapter.NewItemRepo(gen),
+		Images: entadapter.NewItemImageRepo(gen),
+		Labels: entadapter.NewLabelRepo(gen),
+		Places: entadapter.NewSellingPlaceRepo(gen),
+		Owner:  entadapter.NewOwnerRepo(gen),
+	}
+	if store != nil {
+		cfg.Store = s3adapter.New(store, s3adapter.Config{Bucket: "bucket"})
+	}
+	return app.New(cfg)
+}
+
+// ensureOwner resolves the builtin owner row the way the application does.
+func ensureOwner(ctx context.Context, gen *generated.Client) (string, error) {
+	return entadapter.NewOwnerRepo(gen).EnsureBuiltinOwner(ctx)
+}
+
+// seedBuiltinSellingPlaces runs the boot-time seed against the test database.
+func seedBuiltinSellingPlaces(client *db_platform.Client) error {
+	return newApp(client, nil).SeedBuiltinPlaces(context.Background())
 }
 
 // decodeItem reads an ItemOutput out of a recorded response body.
@@ -79,12 +114,12 @@ func TestSeedBuiltinSellingPlacesIdempotent(t *testing.T) {
 	client := testDB(t)
 	truncate(t, client)
 
-	require.NoError(t, SeedBuiltinSellingPlaces(client))
-	require.NoError(t, SeedBuiltinSellingPlaces(client)) // second run: no duplicates
+	require.NoError(t, seedBuiltinSellingPlaces(client))
+	require.NoError(t, seedBuiltinSellingPlaces(client)) // second run: no duplicates
 
 	places, err := client.GetDBFromContext(context.Background()).SellingPlace.Query().All(context.Background())
 	require.NoError(t, err)
-	require.Len(t, places, len(BuiltinSellingPlaces))
+	require.Len(t, places, len(domain.BuiltinSellingPlaces))
 	for _, p := range places {
 		require.True(t, p.IsBuiltin)
 	}
@@ -123,7 +158,7 @@ func TestItemLifecycleWithEdgesAndSearch(t *testing.T) {
 	db := client
 	gen := db.GetDBFromContext(ctx)
 
-	require.NoError(t, SeedBuiltinSellingPlaces(client))
+	require.NoError(t, seedBuiltinSellingPlaces(client))
 	place, err := gen.SellingPlace.Query().Where(sellingplace.NameEQ("Whatnot")).First(ctx)
 	require.NoError(t, err)
 
@@ -147,11 +182,11 @@ func TestItemLifecycleWithEdgesAndSearch(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
-	// Round-trip with eager edges.
-	loaded, err := itemLoaded(ctx, db, it.ID)
+	// Round-trip with eager edges, through the repository the handlers use.
+	loaded, err := entadapter.NewItemRepo(gen).Get(ctx, it.ID)
 	require.NoError(t, err)
-	require.Len(t, loaded.Edges.SellingPlaces, 1)
-	require.Len(t, loaded.Edges.Labels, 1)
+	require.Len(t, loaded.SellingPlaces, 1)
+	require.Len(t, loaded.Labels, 1)
 
 	// Search: by name substring.
 	found, err := gen.Item.Query().Where(item.DeletedAtIsNil(), item.NameContainsFold("fenton")).All(ctx)
@@ -250,13 +285,13 @@ func TestClearFieldsWithEmptyString(t *testing.T) {
 		made = append(made, it.ID)
 	}
 
+	items := entadapter.NewItemRepo(gen)
 	for _, id := range made {
-		body := itemBody{Name: "bowl", Notes: ptr(""), WhatnotNumber: ptr("")}
-		updated, err := applyItemClears(gen.Item.UpdateOneID(id).
-			SetName(body.Name).
-			SetNillableNotes(omitEmpty(body.Notes)).
-			SetNillableWhatnotNumber(omitEmpty(body.WhatnotNumber)), body).
-			Save(ctx)
+		updated, err := items.Update(ctx, id, domain.ItemPatch{
+			Name:          "bowl",
+			Notes:         domain.Clearable(ptr("")),
+			WhatnotNumber: domain.Clearable(ptr("")),
+		})
 		require.NoError(t, err, "clearing both items must not collide on whatnot_number")
 		require.Nil(t, updated.Notes)
 		require.Nil(t, updated.WhatnotNumber)
@@ -326,7 +361,7 @@ func TestSaleCorrections(t *testing.T) {
 	client := testDB(t)
 	truncate(t, client)
 	api := testAPI(t, client)
-	require.NoError(t, SeedBuiltinSellingPlaces(client))
+	require.NoError(t, seedBuiltinSellingPlaces(client))
 
 	var places []SellingPlaceOutput
 	require.NoError(t, json.Unmarshal(api.Get("/admin/selling-places").Body.Bytes(), &places))
@@ -395,7 +430,7 @@ func TestSoldRequiresPlace(t *testing.T) {
 	client := testDB(t)
 	truncate(t, client)
 	api := testAPI(t, client)
-	require.NoError(t, SeedBuiltinSellingPlaces(client))
+	require.NoError(t, seedBuiltinSellingPlaces(client))
 
 	var places []SellingPlaceOutput
 	require.NoError(t, json.Unmarshal(api.Get("/admin/selling-places").Body.Bytes(), &places))
@@ -429,7 +464,7 @@ func TestSoldPlaceCannotBeHardDeleted(t *testing.T) {
 	client := testDB(t)
 	truncate(t, client)
 	api := testAPI(t, client)
-	require.NoError(t, SeedBuiltinSellingPlaces(client))
+	require.NoError(t, seedBuiltinSellingPlaces(client))
 
 	var places []SellingPlaceOutput
 	require.NoError(t, json.Unmarshal(api.Get("/admin/selling-places").Body.Bytes(), &places))
@@ -513,9 +548,9 @@ func TestListCarriesCoverImageURL(t *testing.T) {
 	ctx := context.Background()
 	gen := client.GetDBFromContext(ctx)
 
-	deps := &AppDeps{DB: client, Store: stubStore{url: "https://storage.example"}, S3UploadBucket: "bucket"}
+	application := newApp(client, stubStore{url: "https://storage.example"})
 	_, api := humatest.New(t, huma.DefaultConfig("test", "1.0.0"))
-	registerItemCRUD(api, deps)
+	RegisterItemCRUD(api, application)
 
 	owner, err := ensureOwner(ctx, gen)
 	require.NoError(t, err)
@@ -580,7 +615,7 @@ func TestDeleteOnlyNeverListedDrafts(t *testing.T) {
 	require.Equal(t, 204, api.Delete("/admin/items/"+listed.ID).Code)
 
 	// A sale is never deleted, archived or not.
-	require.NoError(t, SeedBuiltinSellingPlaces(client))
+	require.NoError(t, seedBuiltinSellingPlaces(client))
 	var places []SellingPlaceOutput
 	require.NoError(t, json.Unmarshal(api.Get("/admin/selling-places").Body.Bytes(), &places))
 	sold := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "sold stock"}).Body.Bytes())
@@ -601,9 +636,9 @@ func TestDeleteDraftRemovesImages(t *testing.T) {
 	gen := client.GetDBFromContext(ctx)
 
 	var deleted []string
-	deps := &AppDeps{DB: client, Store: stubStore{url: "https://storage.example", deleted: &deleted}, S3UploadBucket: "bucket"}
+	application := newApp(client, stubStore{url: "https://storage.example", deleted: &deleted})
 	_, api := humatest.New(t, huma.DefaultConfig("test", "1.0.0"))
-	registerItemCRUD(api, deps)
+	RegisterItemCRUD(api, application)
 
 	created := decodeItem(t, api.Post("/admin/items", map[string]any{"name": "junk intake"}).Body.Bytes())
 	for _, key := range []string{"items/a.jpg", "items/b.jpg"} {

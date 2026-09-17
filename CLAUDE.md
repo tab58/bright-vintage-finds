@@ -90,12 +90,12 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ### 5. Testing Discipline
 
-**Before implementing a feature**, add an entry to the owning service's
-test-case log stating what will be tested at each pyramid level
-(unit/integration/contract/E2E) and why. **Before opening a PR**, audit
-the diff against that entry and update its status. See `AGENTS.md`'s
-Reference Documentation for the testing strategy doc and where each
-service's test-case log lives — this solves the "no shared visibility
+**Before implementing a feature**, add or extend the rules it introduces
+in the owning service's business rule registry, stating what will be
+tested at each pyramid level (unit/integration/E2E) and why. **Before
+opening a PR**, audit the diff against those rules and update their
+status and proof. See `AGENTS.md`'s Reference Documentation for where
+each service's registry lives — this solves the "no shared visibility
 across engineers/agents" problem, not a formality to skip under deadline
 pressure.
 

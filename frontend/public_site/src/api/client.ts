@@ -5,16 +5,26 @@
 const base: string =
   (typeof window !== 'undefined' && (window as any).BACKEND_API) || '';
 
+// Cloudflare Access answers an expired session with a cross-origin 302 to its
+// login page. Letting fetch follow it fails CORS as an opaque
+// "TypeError: Failed to fetch", so requests ask for the redirect instead and
+// re-run the login as a real navigation (see reauth below).
+const REAUTH_KEY = 'access-reauth';
+
 // Exported so the public catalog client (api/public.ts) shares the same base
 // resolution and error unwrapping.
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${base}${path}`, {
+    redirect: 'manual',
     headers:
       init?.body && !(init.body instanceof FormData)
         ? { 'Content-Type': 'application/json' }
         : undefined,
     ...init,
   });
+  if (res.type === 'opaqueredirect') reauth();
+  // Anything that reached the origin proves the Access cookie is good again.
+  sessionStorage.removeItem(REAUTH_KEY);
   if (!res.ok) {
     let detail = res.statusText;
     try {
@@ -27,6 +37,18 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (res.status === 204) return undefined as T;
   return res.json();
+}
+
+// A full-page load of /inventory is Access-protected and excluded from the
+// service worker's navigation fallback, so reloading reaches Cloudflare, signs
+// in, and lands back here with a fresh cookie. One reload per tab session: if
+// the round-trip does not stick, surface the error instead of bouncing forever.
+function reauth(): never {
+  if (!sessionStorage.getItem(REAUTH_KEY)) {
+    sessionStorage.setItem(REAUTH_KEY, '1');
+    window.location.reload();
+  }
+  throw new Error('Session expired \u2014 reload to sign in again.');
 }
 
 // The API returns bare JSON; some endpoints were assumed to wrap it in { body }.

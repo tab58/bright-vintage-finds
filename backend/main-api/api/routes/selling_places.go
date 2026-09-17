@@ -1,15 +1,13 @@
-package api
+package routes
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
-	db_platform "main-api/db"
-	"main-api/db/generated"
-	"main-api/db/generated/sellingplace"
+	"main-api/internal/app"
+	"main-api/internal/app/domain"
 
 	"github.com/danielgtaylor/huma/v2"
 )
@@ -23,7 +21,7 @@ type SellingPlaceOutput struct {
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
 
-func sellingPlaceOutput(sp *generated.SellingPlace) *SellingPlaceOutput {
+func sellingPlaceOutput(sp domain.SellingPlace) *SellingPlaceOutput {
 	return &SellingPlaceOutput{
 		ID:        sp.ID,
 		Name:      sp.Name,
@@ -53,22 +51,19 @@ type sellingPlaceIDInput struct {
 	ID string `path:"id" doc:"Selling place ID"`
 }
 
-// registerSellingPlaces registers the /admin/selling-places CRUD routes.
-func registerSellingPlaces(api huma.API, db *db_platform.Client) {
-	client := db.GetDBFromContext(nil)
-
+// RegisterSellingPlaces registers the /admin/selling-places CRUD routes.
+// Places have no rules beyond storage, so the handlers talk to the repository
+// port directly.
+func RegisterSellingPlaces(api huma.API, a *app.Application) {
 	huma.Register(api, huma.Operation{
 		OperationID: "list-selling-places",
 		Method:      http.MethodGet,
 		Path:        "/admin/selling-places",
 		Summary:     "List selling places",
 	}, func(ctx context.Context, _ *struct{}) (*listSellingPlacesOutput, error) {
-		places, err := client.SellingPlace.Query().
-			Where(sellingplace.DeletedAtIsNil()).
-			Order(generated.Asc(sellingplace.FieldName)).
-			All(ctx)
+		places, err := a.ListSellingPlaces(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("listing selling places: %w", err)
+			return nil, toHTTP(err)
 		}
 		out := &listSellingPlacesOutput{Body: make([]*SellingPlaceOutput, 0, len(places))}
 		for _, sp := range places {
@@ -83,14 +78,9 @@ func registerSellingPlaces(api huma.API, db *db_platform.Client) {
 		Path:        "/admin/selling-places",
 		Summary:     "Add a custom selling place",
 	}, func(ctx context.Context, in *createSellingPlaceInput) (*getSellingPlaceOutput, error) {
-		sp, err := client.SellingPlace.Create().
-			SetName(in.Body.Name).
-			Save(ctx)
+		sp, err := a.CreateSellingPlace(ctx, in.Body.Name)
 		if err != nil {
-			if generated.IsConstraintError(err) {
-				return nil, huma.Error409Conflict(fmt.Sprintf("selling place %q already exists", in.Body.Name))
-			}
-			return nil, fmt.Errorf("creating selling place: %w", err)
+			return nil, toHTTP(err)
 		}
 		return &getSellingPlaceOutput{Body: sellingPlaceOutput(sp)}, nil
 	})
@@ -101,15 +91,8 @@ func registerSellingPlaces(api huma.API, db *db_platform.Client) {
 		Path:        "/admin/selling-places/{id}",
 		Summary:     "Soft-delete a selling place",
 	}, func(ctx context.Context, in *sellingPlaceIDInput) (*struct{}, error) {
-		deletedAt := time.Now()
-		err := client.SellingPlace.UpdateOneID(in.ID).
-			SetDeletedAt(deletedAt).
-			Exec(ctx)
-		switch {
-		case generated.IsNotFound(err):
-			return nil, huma.Error404NotFound("selling place not found")
-		case err != nil:
-			return nil, fmt.Errorf("deleting selling place: %w", err)
+		if err := a.DeleteSellingPlace(ctx, in.ID); err != nil {
+			return nil, toHTTP(err)
 		}
 		return nil, nil
 	})

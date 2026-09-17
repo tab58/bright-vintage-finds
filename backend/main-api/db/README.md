@@ -53,7 +53,7 @@ erDiagram
         float  length                 "nullable"
         float  width                  "nullable"
         float  height                 "nullable"
-        enum   measurement_unit       "in|cm, default in"
+        enum   measurement_unit       "inch|cm, default inch"
         string extra_measurements     "nullable"
         int    weight_lbs             "nullable"
         float  weight_oz              "nullable"

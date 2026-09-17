@@ -2,7 +2,7 @@
 
 // Integration tests for the unauthenticated /public catalog routes. They run
 // against the local Docker Postgres (task up), like the admin API tests.
-package api
+package routes
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	db_platform "main-api/db"
 	"main-api/db/generated"
 	"main-api/db/generated/item"
+	"main-api/internal/app"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/humatest"
@@ -22,13 +23,14 @@ import (
 // publicAPI wires the real public catalog routes onto huma's test adapter.
 func publicAPI(t *testing.T, client *db_platform.Client, store bool) humatest.TestAPI {
 	t.Helper()
-	deps := &AppDeps{DB: client}
+	var application *app.Application
 	if store {
-		deps.Store = stubStore{url: "https://storage.example"}
-		deps.S3UploadBucket = "bucket"
+		application = newApp(client, stubStore{url: "https://storage.example"})
+	} else {
+		application = newApp(client, nil)
 	}
 	_, api := humatest.New(t, huma.DefaultConfig("test", "1.0.0"))
-	registerPublicCatalog(api, deps)
+	RegisterPublicCatalog(api, application)
 	return api
 }
 

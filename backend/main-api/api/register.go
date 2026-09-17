@@ -1,48 +1,34 @@
+// Package api is the service's HTTP driving adapter. It builds the server and
+// hands the route registration to api/routes, which owns the wire format.
 package api
 
 import (
-	"context"
-	"net/http"
+	"main-api/api/routes"
+	"main-api/internal/app"
 
-	"github.com/danielgtaylor/huma/v2"
 	server "github.com/tab58/huma-http-server"
 	"github.com/tab58/huma-http-server/router"
 )
 
 // NewServer constructs the HTTP server and registers the platform /healthz
-// route, which is always on the auth/logging skip list. When deps carries a
-// database client, the inventory admin routes and the unauthenticated
-// /public catalog routes are registered too.
-func NewServer[A router.AuthInfo](cfg server.ServerConfig, builder router.AuthInfoBuilder[A], deps *AppDeps, opts ...server.ServerConfigOption) *server.Server[A] {
+// route, which is always on the auth/logging skip list. When an application
+// is given, the inventory admin routes and the unauthenticated /public
+// catalog routes are registered too.
+func NewServer[A router.AuthInfo](cfg server.ServerConfig, builder router.AuthInfoBuilder[A], a *app.Application, opts ...server.ServerConfigOption) *server.Server[A] {
 	opts = append(opts, server.WithSkipPaths([]string{"/healthz"}))
 	srv := server.New(cfg, builder, opts...)
 
-	registerHealthz(srv.API())
+	routes.RegisterHealthz(srv.API())
 
-	if deps != nil && deps.DB != nil {
-		registerSellingPlaces(srv.API(), deps.DB)
-		registerLabels(srv.API(), deps.DB)
-		registerItemCRUD(srv.API(), deps)
-		registerPublicCatalog(srv.API(), deps)
-		if deps.Store != nil {
-			registerItemImageRoutes(srv.API(), deps)
+	if a != nil {
+		routes.RegisterSellingPlaces(srv.API(), a)
+		routes.RegisterLabels(srv.API(), a)
+		routes.RegisterItemCRUD(srv.API(), a)
+		routes.RegisterPublicCatalog(srv.API(), a)
+		if a.HasImageStore() {
+			routes.RegisterItemImageRoutes(srv.API(), a)
 		}
 	}
 
 	return srv
-}
-
-// registerHealthz registers the platform healthcheck. Apps must not
-// register their own /healthz.
-func registerHealthz(api huma.API) {
-	huma.Register(api, huma.Operation{
-		OperationID: "healthcheck",
-		Method:      http.MethodGet,
-		Path:        "/healthz",
-		Summary:     "Platform healthcheck endpoint",
-	}, func(context.Context, *struct{}) (*healthzOutput, error) {
-		out := &healthzOutput{}
-		out.Body.Status = "ok"
-		return out, nil
-	})
 }

@@ -9,6 +9,10 @@ import (
 	"main-api/api"
 	"main-api/cmd/app/config"
 	db_platform "main-api/db"
+	"main-api/internal/app"
+	entadapter "main-api/internal/app/adapters/ent"
+	s3adapter "main-api/internal/app/adapters/s3"
+	"main-api/internal/app/ports"
 	"main-api/internal/cfaccess"
 
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -37,43 +41,31 @@ func run() error {
 		return fmt.Errorf("failed to build Cloudflare Access guard: %w", err)
 	}
 
-	deps := &api.AppDeps{}
-
-	// Database (required in production; optional in development so an empty
-	// env still boots for healthcheck smoke tests).
-	if cfg.MainDBURL != "" {
-		client, err := db_platform.NewClient(db_platform.ClientConfig{ConnectionString: cfg.MainDBURL})
+	// Object storage (optional; the photo routes need it). It is built before
+	// the application so the wiring sees it.
+	var store ports.ImageStore
+	if cfg.S3BaseEndpoint != "" {
+		store, err = imageStore(cfg)
 		if err != nil {
-			return fmt.Errorf("failed to open database: %w", err)
-		}
-		deps.DB = client
-
-		// Seed the builtin selling places; fail-fast so a broken seed surfaces
-		// at deploy time, not when the intake UI first loads.
-		if err := api.SeedBuiltinSellingPlaces(client); err != nil {
-			return fmt.Errorf("failed to seed selling places: %w", err)
+			return err
 		}
 	}
 
-	// Object storage (optional; the image upload route needs it).
-	if cfg.S3BaseEndpoint != "" {
-		if cfg.S3UploadBucket == "" {
-			return fmt.Errorf("S3_UPLOAD_BUCKET is required when S3_BASE_ENDPOINT is set")
-		}
-		awsCfg, err := awsconfig.LoadDefaultConfig(context.Background())
+	// Database (required in production; optional in development so an empty
+	// env still boots for healthcheck smoke tests). Without one there is no
+	// application at all, and only the platform routes are served.
+	var application *app.Application
+	if cfg.MainDBURL != "" {
+		application, err = inventoryApp(cfg.MainDBURL, store)
 		if err != nil {
-			return fmt.Errorf("failed to load AWS config: %w", err)
+			return err
 		}
-		store := aws_s3.NewClient(awsCfg, aws_s3.WithBaseEndpoint(cfg.S3BaseEndpoint))
-		pingCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := store.Ping(pingCtx, cfg.S3UploadBucket); err != nil {
-			return fmt.Errorf("failed to reach object storage: %w", err)
+
+		// Seed the builtin selling places; fail-fast so a broken seed surfaces
+		// at deploy time, not when the intake UI first loads.
+		if err := application.SeedBuiltinPlaces(context.Background()); err != nil {
+			return fmt.Errorf("failed to seed selling places: %w", err)
 		}
-		deps.Store = store
-		deps.S3UploadBucket = cfg.S3UploadBucket
-		deps.S3InternalEndpoint = cfg.S3BaseEndpoint
-		deps.S3PublicEndpoint = cfg.S3PublicEndpoint
 	}
 
 	srv := api.NewServer(server.ServerConfig{
@@ -81,7 +73,7 @@ func run() error {
 		ServiceVersion:     "1.0.0",
 		ServiceDescription: "Main API for the application",
 		Environment:        cfg.Env,
-	}, router.MapAuthInfoBuilder, deps, server.WithMiddleware(adminGuard))
+	}, router.MapAuthInfoBuilder, application, server.WithMiddleware(adminGuard))
 
 	errCh, err := srv.Start(":" + cfg.ServerPort)
 	if err != nil {
@@ -92,4 +84,50 @@ func run() error {
 	// ponytail: no signal-based graceful shutdown yet; add signal.NotifyContext
 	// + srv.Shutdown when deploys need drain
 	return <-errCh
+}
+
+// imageStore builds the object storage adapter and checks the bucket is
+// reachable, so a misconfigured deployment fails at boot rather than on the
+// first upload.
+func imageStore(cfg *config.Config) (ports.ImageStore, error) {
+	if cfg.S3UploadBucket == "" {
+		return nil, fmt.Errorf("S3_UPLOAD_BUCKET is required when S3_BASE_ENDPOINT is set")
+	}
+	awsCfg, err := awsconfig.LoadDefaultConfig(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+	client := aws_s3.NewClient(awsCfg, aws_s3.WithBaseEndpoint(cfg.S3BaseEndpoint))
+
+	pingCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := client.Ping(pingCtx, cfg.S3UploadBucket); err != nil {
+		return nil, fmt.Errorf("failed to reach object storage: %w", err)
+	}
+
+	return s3adapter.New(client, s3adapter.Config{
+		Bucket:           cfg.S3UploadBucket,
+		InternalEndpoint: cfg.S3BaseEndpoint,
+		PublicEndpoint:   cfg.S3PublicEndpoint,
+	}), nil
+}
+
+// inventoryApp opens the inventory database and wires the application over the
+// Ent repositories. This is the composition root: the only place that knows
+// both which adapters exist and which ports they fill.
+func inventoryApp(dbURL string, store ports.ImageStore) (*app.Application, error) {
+	client, err := db_platform.NewClient(db_platform.ClientConfig{ConnectionString: dbURL})
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+	gen := client.GetDBFromContext(context.Background())
+
+	return app.New(app.Config{
+		Items:  entadapter.NewItemRepo(gen),
+		Images: entadapter.NewItemImageRepo(gen),
+		Labels: entadapter.NewLabelRepo(gen),
+		Places: entadapter.NewSellingPlaceRepo(gen),
+		Owner:  entadapter.NewOwnerRepo(gen),
+		Store:  store,
+	}), nil
 }

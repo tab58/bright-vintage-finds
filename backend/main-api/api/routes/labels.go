@@ -1,14 +1,12 @@
-package api
+package routes
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
-	db_platform "main-api/db"
-	"main-api/db/generated"
-	"main-api/db/generated/label"
+	"main-api/internal/app"
+	"main-api/internal/app/domain"
 
 	"github.com/danielgtaylor/huma/v2"
 )
@@ -21,7 +19,7 @@ type LabelOutput struct {
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
 
-func labelOutput(l *generated.Label) *LabelOutput {
+func labelOutput(l domain.Label) *LabelOutput {
 	return &LabelOutput{
 		ID:        l.ID,
 		Name:      l.Name,
@@ -50,22 +48,18 @@ type labelIDInput struct {
 	ID string `path:"id" doc:"Label ID"`
 }
 
-// registerLabels registers the /admin/labels CRUD routes.
-func registerLabels(api huma.API, db *db_platform.Client) {
-	client := db.GetDBFromContext(nil)
-
+// RegisterLabels registers the /admin/labels CRUD routes. Labels have no
+// rules beyond storage, so the handlers talk to the repository port directly.
+func RegisterLabels(api huma.API, a *app.Application) {
 	huma.Register(api, huma.Operation{
 		OperationID: "list-labels",
 		Method:      http.MethodGet,
 		Path:        "/admin/labels",
 		Summary:     "List item-type labels",
 	}, func(ctx context.Context, _ *struct{}) (*listLabelsOutput, error) {
-		labels, err := client.Label.Query().
-			Where(label.DeletedAtIsNil()).
-			Order(generated.Asc(label.FieldName)).
-			All(ctx)
+		labels, err := a.ListLabels(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("listing labels: %w", err)
+			return nil, toHTTP(err)
 		}
 		out := &listLabelsOutput{Body: make([]*LabelOutput, 0, len(labels))}
 		for _, l := range labels {
@@ -80,14 +74,9 @@ func registerLabels(api huma.API, db *db_platform.Client) {
 		Path:        "/admin/labels",
 		Summary:     "Add an item-type label",
 	}, func(ctx context.Context, in *createLabelInput) (*getLabelOutput, error) {
-		l, err := client.Label.Create().
-			SetName(in.Body.Name).
-			Save(ctx)
+		l, err := a.CreateLabel(ctx, in.Body.Name)
 		if err != nil {
-			if generated.IsConstraintError(err) {
-				return nil, huma.Error409Conflict(fmt.Sprintf("label %q already exists", in.Body.Name))
-			}
-			return nil, fmt.Errorf("creating label: %w", err)
+			return nil, toHTTP(err)
 		}
 		return &getLabelOutput{Body: labelOutput(l)}, nil
 	})
@@ -98,15 +87,8 @@ func registerLabels(api huma.API, db *db_platform.Client) {
 		Path:        "/admin/labels/{id}",
 		Summary:     "Soft-delete an item-type label",
 	}, func(ctx context.Context, in *labelIDInput) (*struct{}, error) {
-		deletedAt := time.Now()
-		err := client.Label.UpdateOneID(in.ID).
-			SetDeletedAt(deletedAt).
-			Exec(ctx)
-		switch {
-		case generated.IsNotFound(err):
-			return nil, huma.Error404NotFound("label not found")
-		case err != nil:
-			return nil, fmt.Errorf("deleting label: %w", err)
+		if err := a.DeleteLabel(ctx, in.ID); err != nil {
+			return nil, toHTTP(err)
 		}
 		return nil, nil
 	})

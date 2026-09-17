@@ -158,6 +158,7 @@ __pycache__/
 .claude/
 .superpowers/
 docs/superpowers/
+docs/plans/
 
 # Local Docker Compose files
 environment/local-docker/data/postgres

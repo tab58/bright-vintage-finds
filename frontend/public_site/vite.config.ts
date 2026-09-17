@@ -29,7 +29,15 @@ export default defineConfig({
         navigateFallback: '/index.html',
         // The shell must not answer for the API or for Cloudflare Access's
         // same-origin callback, or login round-trips land on index.html.
-        navigateFallbackDenylist: [/^\/admin/, /^\/public/, /^\/cdn-cgi/],
+        // /inventory* is denylisted too: it is Access-protected, so serving it
+        // from cache swallows the login redirect an expired session needs, and
+        // the app comes up signed out with every /admin fetch failing.
+        navigateFallbackDenylist: [
+          /^\/admin/,
+          /^\/public/,
+          /^\/cdn-cgi/,
+          /^\/inventory/,
+        ],
         // env.js is runtime config, not a build asset: precaching it pins
         // BACKEND_API to whatever it was at build time.
         globIgnores: ['**/env.js'],
